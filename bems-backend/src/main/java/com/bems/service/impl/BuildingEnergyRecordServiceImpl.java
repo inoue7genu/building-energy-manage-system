@@ -25,68 +25,43 @@ import java.time.format.DateTimeFormatter;
 public class BuildingEnergyRecordServiceImpl extends ServiceImpl<BuildingEnergyRecordMapper, BuildingEnergyRecord> implements IBuildingEnergyRecordService {
 
     @Override
-    public Page<BuildingEnergyRecord> queryRecords(Integer current, Integer size, String buildingId, String targetDate) {
-        // 由于需要画出整天的趋势，这里的查询逻辑改为：
-        // 如果前端传了具体日期，我们就把这天从 00:00 到 23:59 的所有数据查出来。
-        // 为了兼容之前的分页查询逻辑，如果前端没传日期，我们仍然只查最新的一页(24条)。
-
+    public Page<BuildingEnergyRecord> queryRecords(Integer current, Integer size, String buildingId, String startDate, String endDate) {
         Page<BuildingEnergyRecord> page = new Page<>(current, size);
         LambdaQueryWrapper<BuildingEnergyRecord> wrapper = new LambdaQueryWrapper<>();
 
-        // 1. 按建筑 ID 筛选
+        // 1. 按建筑精确筛选
         if (StringUtils.hasText(buildingId)) {
             wrapper.eq(BuildingEnergyRecord::getBuildingId, buildingId);
         }
 
-        // 2. 按目标日期筛选（关键新增逻辑）
-        if (StringUtils.hasText(targetDate)) {
-            // 解析前端传来的 YYYY-MM-DD
-            LocalDate date = LocalDate.parse(targetDate, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-            // 构建当天的起始和结束时间
-            LocalDateTime startOfDay = date.atTime(LocalTime.MIN);
-            LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
-
-            // 筛选条件：时间大于等于当天的 00:00:00，且小于等于当天的 23:59:59
-            wrapper.ge(BuildingEnergyRecord::getTimestamp, startOfDay);
-            wrapper.le(BuildingEnergyRecord::getTimestamp, endOfDay);
-
-            // 如果指定了具体日期查询一整天，为了保证展示完整，强行把查询数量设为 24 条
-            page.setSize(24);
-            // 按照时间正序排列，方便 ECharts 画线
-            wrapper.orderByAsc(BuildingEnergyRecord::getTimestamp);
-
-        } else {
-            // 如果没传日期，则保持原样：按时间降序查询最新的一页
-            wrapper.orderByDesc(BuildingEnergyRecord::getTimestamp);
+        // 2. 按时间范围筛选 (前端传入格式: YYYY-MM-DD)
+        if (StringUtils.hasText(startDate)) {
+            wrapper.ge(BuildingEnergyRecord::getTimestamp, startDate + " 00:00:00");
+        }
+        if (StringUtils.hasText(endDate)) {
+            wrapper.le(BuildingEnergyRecord::getTimestamp, endDate + " 23:59:59");
         }
 
-        // 获取底层纯净数据
+        // 3. 表格数据通常习惯“最新的一眼看到”，所以按时间降序排列
+        wrapper.orderByDesc(BuildingEnergyRecord::getTimestamp);
+
+        // 4. 执行底层物理分页查询
         Page<BuildingEnergyRecord> resultPage = this.page(page, wrapper);
 
-        // 如果走的是默认查询（没传日期，按降序查的最新一天），需要把查出来的数据再反转回正序，否则图表时间线反着
-        if (!StringUtils.hasText(targetDate) && !resultPage.getRecords().isEmpty()) {
-            java.util.Collections.reverse(resultPage.getRecords());
-        }
-
-        // 3. AI 级内存动态预警诊断（保持不变）
+        // 5. 补充动态预警标签（复用核心逻辑）
         for (BuildingEnergyRecord record : resultPage.getRecords()) {
             String status = "normal";
             Double elec = record.getElectricity();
             Integer hour = record.getHour();
             Integer isWeekend = record.getIsWeekend();
-            Double temp = record.getAirTemperature();
 
             if (elec != null && hour != null) {
-                // 规则A：深夜非工作时间 (22:00 - 05:00) 耗电量异常偏高 (>50)
                 if ((hour >= 22 || hour <= 5) && elec > 50.0) {
                     status = "night_abnormal";
-                }
-                // 规则B：周末空场期耗电量过高
-                else if (isWeekend != null && isWeekend == 1 && elec > 100.0) {
+                } else if (isWeekend != null && isWeekend == 1 && elec > 100.0) {
                     status = "weekend_abnormal";
                 }
-
-                // 规则C：环境交叉验证（深度诊断）
+                Double temp = record.getAirTemperature();
                 if (!"normal".equals(status) && temp != null && temp < 20.0) {
                     status = "critical_abnormal";
                 }

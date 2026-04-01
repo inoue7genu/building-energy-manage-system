@@ -14,7 +14,7 @@ import com.bems.entity.BuildingEnergyRecord;
 public interface IBuildingEnergyRecordService extends IService<BuildingEnergyRecord> {
 
     // 核心大屏数据源：分页与条件查询
-    Page<BuildingEnergyRecord> queryRecords(Integer current, Integer size, String buildingId, String targetDate);
+    Page<BuildingEnergyRecord> queryRecords(Integer current, Integer size, String buildingId, String startDate, String endDate);
 
     // 新增日历台账接口
     java.util.List<java.util.Map<String, Object>> getCalendarSummary(String buildingId);

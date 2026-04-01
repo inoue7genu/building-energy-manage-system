@@ -24,12 +24,12 @@ public class BuildingEnergyRecordController {
     @GetMapping("/page")
     public Page<BuildingEnergyRecord> getRecordsByPage(
             @RequestParam(defaultValue = "1") Integer current,
-            @RequestParam(defaultValue = "24") Integer size,
+            @RequestParam(defaultValue = "15") Integer size, // 表格默认一页看 15 条
             @RequestParam(required = false) String buildingId,
-            // 新增接收前端传来的具体日期参数 (格式: YYYY-MM-DD)
-            @RequestParam(required = false) String targetDate) {
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
 
-        return energyService.queryRecords(current, size, buildingId, targetDate);
+        return energyService.queryRecords(current, size, buildingId, startDate, endDate);
     }
 
     // 新增：前端日历热力图专用接口
