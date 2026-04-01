@@ -1,0 +1,13 @@
+src/main.js：全局入口文件。整个 Vue 项目的“总电闸”。负责挂载整个应用、引入 Element Plus 组件库、引入 Vue Router 路由等。
+
+src/App.vue：根组件（应用骨架）。所有页面的“最外层画框”。我们把**顶部导航栏（NavBar）**写在这里，这样无论怎么切换页面，导航栏都始终固定在顶部。内部通过 <router-view> 标签作为“插槽”，来动态显示具体的子页面。
+
+src/router/index.js：路由配置中心。前端的“交通警察”。负责定义 URL 路径与页面的对应关系（比如：规定用户访问 /dashboard 时，就去加载 Dashboard.vue 这个文件）。
+
+src/views/：页面级组件目录。存放真正干活的业务页面。
+
+Dashboard.vue：态势大屏页（放 ECharts 折线图、饼图、KPI 卡片）。
+
+DataQuery.vue：数据查询页（放 Element Plus 的复杂表格、分页器、导出功能）。
+
+SmartDiagnosis.vue：AI 智能诊断页（预留给 RagFlow 和 Spring AI 聊天窗口的专属区域）。
