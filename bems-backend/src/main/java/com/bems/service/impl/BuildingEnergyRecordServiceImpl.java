@@ -34,21 +34,23 @@ public class BuildingEnergyRecordServiceImpl extends ServiceImpl<BuildingEnergyR
             wrapper.eq(BuildingEnergyRecord::getBuildingId, buildingId);
         }
 
-        // 2. 按时间范围筛选 (前端传入格式: YYYY-MM-DD)
+        // 🚀 核心修复：必须将前端传来的 String 转换为 LocalDateTime 对象！
+        // 否则 MyBatis-Plus 的 >= 和 <= 会在底层默默失效！
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         if (StringUtils.hasText(startDate)) {
-            wrapper.ge(BuildingEnergyRecord::getTimestamp, startDate + " 00:00:00");
+            wrapper.ge(BuildingEnergyRecord::getTimestamp, java.time.LocalDateTime.parse(startDate + " 00:00:00", formatter));
         }
         if (StringUtils.hasText(endDate)) {
-            wrapper.le(BuildingEnergyRecord::getTimestamp, endDate + " 23:59:59");
+            wrapper.le(BuildingEnergyRecord::getTimestamp, java.time.LocalDateTime.parse(endDate + " 23:59:59", formatter));
         }
 
-        // 3. 表格数据通常习惯“最新的一眼看到”，所以按时间降序排列
+        // 表格数据习惯“最新的一眼看到”，按时间降序排列
         wrapper.orderByDesc(BuildingEnergyRecord::getTimestamp);
 
-        // 4. 执行底层物理分页查询
+        // 执行底层物理分页查询
         Page<BuildingEnergyRecord> resultPage = this.page(page, wrapper);
 
-        // 5. 补充动态预警标签（复用核心逻辑）
+        // 补充动态预警标签
         for (BuildingEnergyRecord record : resultPage.getRecords()) {
             String status = "normal";
             Double elec = record.getElectricity();
