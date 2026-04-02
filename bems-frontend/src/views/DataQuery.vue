@@ -128,7 +128,7 @@ const tableData = ref([])
 const total = ref(0)
 const dateRange = ref([])
 
-// 查询参数
+// 🚀 撤销限制：恢复默认全局查询 (buildingId 为空)
 const queryParams = reactive({
   current: 1,
   size: 15,
@@ -136,18 +136,15 @@ const queryParams = reactive({
 })
 
 /* ==========================================
-   范围选择器 - 能量槽热力图逻辑
+   范围选择器 - 能量槽热力图逻辑 (已解除全局限制)
 ========================================== */
 const calendarMap = ref({})
 let maxElecOfDay = 1
 
-// 拉取日历台账
+// 拉取日历台账 (无论是否选择建筑，都去拉取！)
 const fetchCalendarSummary = async () => {
-  if (!queryParams.buildingId) {
-    calendarMap.value = {} // 不选建筑就不展示热力
-    return
-  }
   try {
+    // 如果 buildingId 为空，后端现在会自动返回园区所有建筑的总和！
     const res = await axios.get(`http://localhost:8080/api/energy/calendar?buildingId=${queryParams.buildingId}`)
     const map = {}
     let max = 0
@@ -164,17 +161,16 @@ const fetchCalendarSummary = async () => {
   }
 }
 
-// 切换建筑时触发
+// 切换建筑时触发：清空日期，重新拉取对应(全局或单体)的热力图
 const handleBuildingChange = () => {
   queryParams.current = 1
-  dateRange.value = [] // 切换建筑清空旧日期
+  dateRange.value = []
   fetchCalendarSummary()
   fetchTableData()
 }
 
+// 🚀 解除限制：直接依据热力图数据判断是否置灰
 const disabledDate = (time) => {
-  // 只有当明确选择了某栋建筑时，才禁用没数据的日子。全局查询时允许随便点。
-  if (!queryParams.buildingId) return false
   if (!time) return true
   const dateStr = new Date(time.getTime() - (time.getTimezoneOffset() * 60000)).toISOString().split('T')[0]
   return !calendarMap.value[dateStr]
@@ -186,8 +182,8 @@ const getCellDateStr = (cell) => {
   return new Date(dateObj.getTime() - (dateObj.getTimezoneOffset() * 60000)).toISOString().split('T')[0]
 }
 
+// 🚀 解除限制：直接依据热力图数据判断是否有能量槽
 const hasData = (cell) => {
-  if (!queryParams.buildingId) return false
   const dateStr = getCellDateStr(cell)
   return dateStr && !!calendarMap.value[dateStr]
 }
@@ -245,7 +241,7 @@ const handleCurrentChange = (newPage) => {
 
 
 /* ==========================================
-   🚀 高级报表导出引擎 (支持全部/跨页导出)
+   高级报表导出引擎 (支持全部/跨页导出)
 ========================================== */
 const exportDialogVisible = ref(false)
 const exportMode = ref('current')
@@ -270,7 +266,6 @@ const executeExport = async () => {
     if (exportMode.value === 'current') {
       exportData = tableData.value
     } else {
-      // 需要往后端发请求拉取多页数据
       let startPage = exportMode.value === 'all' ? 1 : customPageRange.start
       let endPage = exportMode.value === 'all' ? Math.ceil(total.value / queryParams.size) : customPageRange.end
 
@@ -282,7 +277,6 @@ const executeExport = async () => {
 
       ElMessage.info(`正在抓取第 ${startPage} 到 ${endPage} 页的底层数据，请稍候...`)
 
-      // 循环遍历抓取所需页码的数据
       for (let p = startPage; p <= endPage; p++) {
         let url = `http://localhost:8080/api/energy/page?current=${p}&size=${queryParams.size}`
         if (queryParams.buildingId) url += `&buildingId=${queryParams.buildingId}`
@@ -294,8 +288,7 @@ const executeExport = async () => {
       }
     }
 
-    // 生成 CSV 字符串
-    let csvContent = '\uFEFF' // 解决中文乱码
+    let csvContent = '\uFEFF'
     csvContent += "流水号,记录时间,建筑节点标识,耗电量(kWh),冷负荷(kWh),室外温度(℃),智能诊断状态\n"
 
     exportData.forEach(row => {
@@ -305,7 +298,6 @@ const executeExport = async () => {
       csvContent += `${row.id},${timeText},${row.buildingId},${row.electricity},${row.chilledwater},${row.airTemperature},${statusText}\n`
     })
 
-    // 触发下载
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement("a")
     const url = URL.createObjectURL(blob)
@@ -326,9 +318,10 @@ const executeExport = async () => {
   }
 }
 
+// 初始加载：立刻拉取全局热力图和全局数据
 onMounted(() => {
+  fetchCalendarSummary()
   fetchTableData()
-  // 初始不加载日历，等用户选了具体建筑再加载
 })
 </script>
 
