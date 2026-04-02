@@ -20,10 +20,17 @@ import java.util.Map;
 public interface BuildingEnergyRecordMapper extends BaseMapper<BuildingEnergyRecord> {
 
     // 新增：按天分组，计算每日总电耗，用于前端生成热力日历！
-    @Select("SELECT DATE_FORMAT(`timestamp`, '%Y-%m-%d') AS recordDate, SUM(electricity) AS totalElec " +
+    // 🚀 核心升级：使用动态 SQL，支持全局热力台账计算！
+    @Select("<script>" +
+            "SELECT DATE_FORMAT(`timestamp`, '%Y-%m-%d') AS recordDate, SUM(electricity) AS totalElec " +
             "FROM building_energy_records " +
-            "WHERE building_id = #{buildingId} " +
-            "GROUP BY DATE_FORMAT(`timestamp`, '%Y-%m-%d')")
+            "<where>" +
+            "  <if test='buildingId != null and buildingId != \"\"'>" +
+            "    building_id = #{buildingId} " +
+            "  </if>" +
+            "</where>" +
+            "GROUP BY DATE_FORMAT(`timestamp`, '%Y-%m-%d')" +
+            "</script>")
     List<Map<String, Object>> getCalendarSummary(@Param("buildingId") String buildingId);
 
     // ✨ 新增：图表专用的动态聚合查询
