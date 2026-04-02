@@ -1,0 +1,19 @@
+{
+    "output": {
+        "filePath": "frontend-combined.txt"
+    },
+    "ignore": {
+        "customPatterns": [
+            "**/node_modules/**",
+            "**/dist/**",
+            "**/build/**",
+            "**/.next/**",
+            "**/package-lock.json",
+            "**/yarn.lock",
+            "**/*.png",
+            "**/*.jpg",
+            "**/*.svg",
+            "**/*.ico"
+        ]
+    }
+}

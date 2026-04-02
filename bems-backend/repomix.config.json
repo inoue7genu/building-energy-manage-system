@@ -1,0 +1,24 @@
+{
+    "output": {
+        "filePath": "springboot-combined.txt",
+        "removeComments": true,
+        "removeEmptyLines": true,
+        "showLineNumbers": false,
+        "copyToClipboard": false
+    },
+    "include": [
+        "src/main/java",
+        "src/main/resources"
+    ],
+    "ignore": {
+        "customPatterns": [
+            "**/target/**",
+            "**/*.class",
+            "**/static/**",
+            "**/templates/**/*.html",
+            "**/.settings/**",
+            "**/.mvn/**",
+            "**/mvnw*"
+        ]
+    }
+}
