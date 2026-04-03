@@ -27,7 +27,7 @@ public class SmartDiagnosisController {
      * 极客终端流式对话接口 (SSE 技术)
      * 返回值 Flux<String> 就像一根水管，源源不断地把 AI 生成的字推给前端
      */
-    @GetMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @GetMapping(value = "/chat/stream", produces = "text/event-stream;charset=UTF-8")
     public Flux<String> streamChat(@RequestParam String message) {
 
         System.out.println("🤖 接收到指挥官指令: " + message);
