@@ -4,18 +4,19 @@ spring:
     url: jdbc:mysql://localhost:3306/a08_energy_db?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
     username: root
     password: xiaoe
-mybatis-plus:
-  configuration:
-    map-underscore-to-camel-case: true # \u5F00\u542F\u9A7C\u5CF0\u547D\u540D\u81EA\u52A8\u6620\u5C04 (air_temperature -> airTemperature)
 
-  # 🤖 新增的 AI 配置
+  # 🤖 核心修复：ai 必须紧跟在 spring 下面（缩进2个空格），和 datasource 平级！
   ai:
     openai:
-      # 替换成你们团队申请的 API Key (例如阿里云百炼、智谱等)
+      # 你们的通义千问 API Key
       api-key: sk-244e27e02e404ef3aa4aa5be5765f169
-      # 模型的请求地址 (这里以通义千问为例，如果用别的模型就换成别的地址)
-      base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      # 兼容 OpenAI 格式的请求地址
+      base-url: https://dashscope.aliyuncs.com/compatible-mode
       chat:
         options:
           # 指定要使用的模型名字
           model: qwen3-max
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true # 开启驼峰命名自动映射 (air_temperature -> airTemperature)
