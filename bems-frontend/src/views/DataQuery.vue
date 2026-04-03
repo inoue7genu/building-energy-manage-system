@@ -1,6 +1,7 @@
 <template>
-  <el-config-provider :locale="zhCn || {}">
-    <div class="data-query-container">
+
+  <div class="data-query-container">
+    <el-config-provider :locale="zhCn || {}">
 
       <div class="filter-panel">
         <div class="filter-left">
@@ -151,8 +152,9 @@
         </template>
       </el-dialog>
 
-    </div>
-  </el-config-provider>
+
+    </el-config-provider>
+  </div>
 </template>
 
 <script setup>
