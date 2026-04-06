@@ -34,7 +34,7 @@ public class SmartDiagnosisController {
             // 这会完美绕过阿里云流式返回空字符串的 Bug
             String fullResponse = chatClient.prompt()
                     .user(message)
-                    .functions("getBuildingEnergy") // 挂载查询工具
+                    .functions("getBuildingEnergy", "consultExpertManual")// 挂载查询工具
                     .call()
                     .content();
 
