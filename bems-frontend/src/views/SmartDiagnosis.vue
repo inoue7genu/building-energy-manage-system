@@ -51,7 +51,8 @@
             :class="msg.role === 'user' ? 'is-user' : 'is-ai'">
             <div class="avatar">{{ msg.role === 'user' ? 'You' : 'AI' }}</div>
             <div class="message-bubble">
-              <span style="white-space: pre-wrap;">{{ msg.content }}</span>
+              <div class="markdown-body" v-html="parseMarkdown(msg.content)"></div>
+
               <span v-if="isTyping && index === chatList.length - 1 && msg.role === 'ai'" class="cursor">_</span>
             </div>
           </div>
@@ -77,6 +78,9 @@ import { ref, nextTick } from 'vue'
 import { Odometer, DataLine, Document, Position } from '@element-plus/icons-vue'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import { ElMessage } from 'element-plus'
+
+// 🚀 新增：引入 Markdown 渲染引擎
+import { marked } from 'marked'
 
 // 状态管理
 const inputMessage = ref('')
@@ -138,6 +142,12 @@ const sendMessage = () => {
     isTyping.value = false
     eventSource.close() // 极其重要：掐断连接，防止浏览器无限重连请求
   }
+}
+
+// 🚀 新增：Markdown 解析函数
+const parseMarkdown = (text) => {
+  if (!text) return ''
+  return marked.parse(text)
 }
 </script>
 
@@ -411,5 +421,66 @@ const sendMessage = () => {
   100% {
     text-shadow: 0 0 5px #00F0FF;
   }
+}
+
+/* =========================================
+   🚀 专属 Markdown 赛博朋克渲染样式
+========================================= */
+:deep(.markdown-body) {
+  color: #E0E2F5;
+  font-family: "PingFang SC", "Microsoft YaHei", monospace;
+  line-height: 1.6;
+}
+
+:deep(.markdown-body p) {
+  margin-bottom: 12px;
+}
+
+:deep(.markdown-body strong) {
+  color: #00FF9D;
+  /* 加粗文字变成赛博绿 */
+  text-shadow: 0 0 5px rgba(0, 255, 157, 0.4);
+  font-weight: bold;
+}
+
+:deep(.markdown-body ul),
+:deep(.markdown-body ol) {
+  margin-left: 20px;
+  margin-bottom: 12px;
+}
+
+:deep(.markdown-body li) {
+  margin-bottom: 6px;
+}
+
+:deep(.markdown-body li::marker) {
+  color: #00F0FF;
+  /* 列表圆点变成霓虹蓝 */
+}
+
+/* 行内小代码块 */
+:deep(.markdown-body code:not(pre code)) {
+  background: rgba(0, 240, 255, 0.15);
+  color: #00F0FF;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  font-family: monospace;
+}
+
+/* 独立的大代码块 */
+:deep(.markdown-body pre) {
+  background: #05050f;
+  border: 1px solid #2A2946;
+  border-left: 4px solid #00F0FF;
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin-bottom: 12px;
+}
+
+:deep(.markdown-body pre code) {
+  color: #00F0FF;
+  font-family: monospace;
 }
 </style>
