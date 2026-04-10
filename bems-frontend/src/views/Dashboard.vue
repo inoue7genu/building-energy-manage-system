@@ -24,6 +24,14 @@
         </div>
 
         <div class="control-item">
+          <span class="control-label" style="margin-left: 15px;">动态曲线</span>
+          <el-checkbox-group v-model="selectedParams" @change="fetchDataAndRender" class="cyber-checkbox-group">
+            <el-checkbox value="electricity">耗电态势</el-checkbox>
+            <el-checkbox value="chilledwater">冷负荷态势</el-checkbox>
+          </el-checkbox-group>
+        </div>
+
+        <div class="control-item">
           <span class="control-label">态势起点</span>
           <el-button-group class="date-navigator">
             <el-button @click="adjustDate('prev')">
@@ -110,6 +118,9 @@ const timeUnit = ref('day')
 const prevText = computed(() => timeUnit.value === 'day' ? '前一天' : timeUnit.value === 'week' ? '前一周' : '前一月')
 const nextText = computed(() => timeUnit.value === 'day' ? '后一天' : timeUnit.value === 'week' ? '后一周' : '后一月')
 
+// 💡 定义默认选中的折线图
+const selectedParams = ref(['electricity', 'chilledwater'])
+
 const adjustDate = (direction) => {
   const d = new Date(selectedDate.value)
   const offset = direction === 'prev' ? -1 : 1
@@ -195,9 +206,20 @@ const fetchCalendarAndRender = async () => {
   }
 }
 
+/* ==========================================
+   🚀 核心重构：动态图表构建引擎
+========================================== */
 const fetchDataAndRender = async () => {
   try {
-    const url = `http://localhost:8080/api/energy/chart?buildingId=${currentBuilding.value}&targetDate=${selectedDate.value}&timeUnit=${timeUnit.value}`
+    // 1. 安全拦截
+    if (selectedParams.value.length === 0) {
+      ElMessage.warning('请至少保留一条监测曲线')
+      if (lineChart) lineChart.clear()
+      return
+    }
+
+    // 2. 拼接携带参数的 URL
+    const url = `http://localhost:8080/api/energy/chart?buildingId=${currentBuilding.value}&targetDate=${selectedDate.value}&timeUnit=${timeUnit.value}&parameters=${selectedParams.value.join(',')}`
     const res = await axios.get(url)
     const records = res.data
 
@@ -207,7 +229,7 @@ const fetchDataAndRender = async () => {
       return
     }
 
-    // 动态拼接展示标题
+    // 更新界面标题
     if (timeUnit.value === 'day') {
       currentDataDate.value = `${selectedDate.value} (24小时)`
     } else if (timeUnit.value === 'week') {
@@ -216,6 +238,7 @@ const fetchDataAndRender = async () => {
       currentDataDate.value = `${selectedDate.value} 起 (连续30天)`
     }
 
+    // 数据清洗装载
     let totalElec = 0; let totalWater = 0; let abnormalCount = 0;
     const xData = []; const elecData = []; const waterData = []; const abnormalPoints = [];
 
@@ -237,6 +260,7 @@ const fetchDataAndRender = async () => {
       }
     })
 
+    // 刷新 KPI 数值
     kpiData[0].value = totalElec.toFixed(1)
     kpiData[1].value = totalWater.toFixed(1)
     kpiData[2].value = totalElec > 0 ? (totalWater / totalElec).toFixed(2) : '0.00'
@@ -244,32 +268,59 @@ const fetchDataAndRender = async () => {
 
     if (!lineChart) lineChart = echarts.init(lineChartRef.value)
 
+    // 3. 🚀 动态拼装 ECharts 坐标轴和数据列
+    const legendData = []
+    const yAxisConfig = []
+    const seriesConfig = []
+
+    if (selectedParams.value.includes('electricity')) {
+      legendData.push('耗电量 (kWh)')
+      yAxisConfig.push({
+        type: 'value', name: '电耗', position: 'left',
+        nameTextStyle: { color: '#00F0FF' },
+        splitLine: { lineStyle: { color: '#1f1d36', type: 'dashed' } },
+        axisLabel: { color: '#00F0FF' }
+      })
+      seriesConfig.push({
+        name: '耗电量 (kWh)', type: 'line',
+        yAxisIndex: yAxisConfig.length - 1, // 动态绑定 Y 轴
+        smooth: true, data: elecData,
+        lineStyle: { color: '#00F0FF', width: 3 },
+        areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(0,240,255,0.4)' }, { offset: 1, color: 'rgba(0,240,255,0)' }]) },
+        markPoint: { symbol: 'pin', symbolSize: 50, label: { color: '#fff', fontSize: 10 }, data: abnormalPoints }
+      })
+    }
+
+    if (selectedParams.value.includes('chilledwater')) {
+      legendData.push('冷负荷 (kWh)')
+      yAxisConfig.push({
+        type: 'value', name: '冷量', position: 'right',
+        nameTextStyle: { color: '#7359FF' },
+        splitLine: { show: false },
+        axisLabel: { color: '#7359FF' }
+      })
+      seriesConfig.push({
+        name: '冷负荷 (kWh)', type: 'line',
+        yAxisIndex: yAxisConfig.length - 1, // 动态绑定 Y 轴
+        smooth: true, data: waterData,
+        lineStyle: { color: '#7359FF', width: 2, type: 'dashed' }
+      })
+    }
+
+    // 4. 将动态配置注入实例
     lineChart.setOption({
       tooltip: { trigger: 'axis', backgroundColor: 'rgba(11, 9, 26, 0.8)', textStyle: { color: '#fff' } },
       legend: {
-        data: ['耗电量 (kWh)', '冷负荷 (kWh)'],
+        data: legendData,
         textStyle: { color: '#a0a2b8' },
         icon: 'circle', top: '2%', right: '5%'
       },
       grid: { left: '3%', right: '4%', bottom: '3%', top: '18%', containLabel: true },
       xAxis: { type: 'category', data: xData, axisLabel: { color: '#a0a2b8' } },
-      yAxis: [
-        { type: 'value', name: '电耗', nameTextStyle: { color: '#00F0FF' }, splitLine: { lineStyle: { color: '#1f1d36', type: 'dashed' } }, axisLabel: { color: '#00F0FF' } },
-        { type: 'value', name: '冷量', nameTextStyle: { color: '#7359FF' }, splitLine: { show: false }, axisLabel: { color: '#7359FF' } }
-      ],
-      series: [
-        {
-          name: '耗电量 (kWh)', type: 'line', yAxisIndex: 0, smooth: true, data: elecData,
-          lineStyle: { color: '#00F0FF', width: 3 },
-          areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(0,240,255,0.4)' }, { offset: 1, color: 'rgba(0,240,255,0)' }]) },
-          markPoint: { symbol: 'pin', symbolSize: 50, label: { color: '#fff', fontSize: 10 }, data: abnormalPoints }
-        },
-        {
-          name: '冷负荷 (kWh)', type: 'line', yAxisIndex: 1, smooth: true, data: waterData,
-          lineStyle: { color: '#7359FF', width: 2, type: 'dashed' }
-        }
-      ]
-    }, true)
+      yAxis: yAxisConfig,
+      series: seriesConfig
+    }, true) // 🚨 注意此处的 true 参数极其关键：它告诉 ECharts 彻底清除旧图层，使用新传入的 series
+
   } catch (error) {
     console.error('渲染数据失败', error)
   }
@@ -305,6 +356,22 @@ onUnmounted(() => { window.removeEventListener('resize', () => { }) })
 </script>
 
 <style scoped>
+/* 赛博风复选框样式补充 */
+:deep(.cyber-checkbox-group .el-checkbox__input.is-checked .el-checkbox__inner) {
+  background-color: #00F0FF;
+  border-color: #00F0FF;
+}
+
+:deep(.cyber-checkbox-group .el-checkbox__input.is-checked + .el-checkbox__label) {
+  color: #00F0FF;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(0, 240, 255, 0.4);
+}
+
+:deep(.cyber-checkbox-group .el-checkbox) {
+  margin-right: 15px;
+}
+
 .dashboard-container {
   height: 100%;
   display: flex;
