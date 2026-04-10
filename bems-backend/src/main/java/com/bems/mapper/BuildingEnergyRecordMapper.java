@@ -34,17 +34,23 @@ public interface BuildingEnergyRecordMapper extends BaseMapper<BuildingEnergyRec
     List<Map<String, Object>> getCalendarSummary(@Param("buildingId") String buildingId);
 
     // ✨ 新增：图表专用的动态聚合查询
-    @Select("SELECT DATE_FORMAT(`timestamp`, #{format}) AS timeLabel, " +
-            "SUM(electricity) AS electricity, " +
-            "SUM(chilledwater) AS chilledwater " +
+    @Select("<script>" +
+            "SELECT DATE_FORMAT(`timestamp`, #{format}) AS timeLabel, " +
+            // 🛡️ 骨架指标：永远查出电量，供底层计算 AI 异常状态！
+            "SUM(electricity) AS electricity " +
+            // 📊 动态指标：前端传了 chilledwater 才去聚合冷冻水
+            "<if test='parameters == null or parameters.contains(\"chilledwater\")'>, SUM(chilledwater) AS chilledwater</if> " +
             "FROM building_energy_records " +
             "WHERE building_id = #{buildingId} " +
             "AND `timestamp` >= #{startTime} AND `timestamp` <= #{endTime} " +
             "GROUP BY timeLabel " +
-            "ORDER BY timeLabel ASC")
+            "ORDER BY timeLabel ASC" +
+            "</script>")
     List<Map<String, Object>> getAggregatedChartData(
             @Param("buildingId") String buildingId,
             @Param("startTime") String startTime,
             @Param("endTime") String endTime,
-            @Param("format") String format);
+            @Param("format") String format,
+            // 👇 新增传入参数
+            @Param("parameters") List<String> parameters);
 }

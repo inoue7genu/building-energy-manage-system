@@ -6,6 +6,8 @@ import com.bems.service.IBuildingEnergyRecordService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /**
  * @Auther: inoue
  * @Date: 2026/3/31 - 03 - 31 - 21:16
@@ -24,12 +26,13 @@ public class BuildingEnergyRecordController {
     @GetMapping("/page")
     public Page<BuildingEnergyRecord> getRecordsByPage(
             @RequestParam(defaultValue = "1") Integer current,
-            @RequestParam(defaultValue = "15") Integer size, // 表格默认一页看 15 条
+            @RequestParam(defaultValue = "15") Integer size,
             @RequestParam(required = false) String buildingId,
             @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate) {
-
-        return energyService.queryRecords(current, size, buildingId, startDate, endDate);
+            @RequestParam(required = false) String endDate,
+            // 👇 新增：接收前端传来的指标数组
+            @RequestParam(required = false) List<String> parameters) {
+        return energyService.queryRecords(current, size, buildingId, startDate, endDate, parameters);
     }
 
     // 新增：前端日历热力图专用接口
@@ -45,8 +48,9 @@ public class BuildingEnergyRecordController {
     public java.util.List<java.util.Map<String, Object>> getChartData(
             @RequestParam String buildingId,
             @RequestParam String targetDate,
-            @RequestParam(defaultValue = "day") String timeUnit) {
-
-        return energyService.getChartData(buildingId, targetDate, timeUnit);
+            @RequestParam(defaultValue = "day") String timeUnit,
+            // 👇 新增：接收前端传来的指标数组
+            @RequestParam(required = false) List<String> parameters) {
+        return energyService.getChartData(buildingId, targetDate, timeUnit, parameters);
     }
 }

@@ -1,6 +1,7 @@
 package com.bems.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.bems.entity.BuildingEnergyRecord;
@@ -13,6 +14,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @Auther: inoue
@@ -25,27 +28,54 @@ import java.time.format.DateTimeFormatter;
 public class BuildingEnergyRecordServiceImpl extends ServiceImpl<BuildingEnergyRecordMapper, BuildingEnergyRecord> implements IBuildingEnergyRecordService {
 
     @Override
-    public Page<BuildingEnergyRecord> queryRecords(Integer current, Integer size, String buildingId, String startDate, String endDate) {
+    // 🚀 修复点 1：方法签名这里必须加上 List<String> parameters！
+    public Page<BuildingEnergyRecord> queryRecords(Integer current, Integer size, String buildingId, String startDate, String endDate, List<String> parameters) {
         Page<BuildingEnergyRecord> page = new Page<>(current, size);
-        LambdaQueryWrapper<BuildingEnergyRecord> wrapper = new LambdaQueryWrapper<>();
+
+        // 🚀 修复点 2：动态 Select 需要用到 QueryWrapper，不能用 LambdaQueryWrapper
+        QueryWrapper<BuildingEnergyRecord> wrapper = new QueryWrapper<>();
 
         // 1. 按建筑精确筛选
         if (StringUtils.hasText(buildingId)) {
-            wrapper.eq(BuildingEnergyRecord::getBuildingId, buildingId);
+            wrapper.eq("building_id", buildingId);
         }
 
-        // 🚀 核心修复：必须将前端传来的 String 转换为 LocalDateTime 对象！
-        // 否则 MyBatis-Plus 的 >= 和 <= 会在底层默默失效！
+        // 必须将前端传来的 String 转换为 LocalDateTime 对象！
         java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         if (StringUtils.hasText(startDate)) {
-            wrapper.ge(BuildingEnergyRecord::getTimestamp, java.time.LocalDateTime.parse(startDate + " 00:00:00", formatter));
+            wrapper.ge("`timestamp`", java.time.LocalDateTime.parse(startDate + " 00:00:00", formatter));
         }
         if (StringUtils.hasText(endDate)) {
-            wrapper.le(BuildingEnergyRecord::getTimestamp, java.time.LocalDateTime.parse(endDate + " 23:59:59", formatter));
+            wrapper.le("`timestamp`", java.time.LocalDateTime.parse(endDate + " 23:59:59", formatter));
         }
 
         // 表格数据习惯“最新的一眼看到”，按时间降序排列
-        wrapper.orderByDesc(BuildingEnergyRecord::getTimestamp);
+        wrapper.orderByDesc("`timestamp`");
+
+        // 🚀 核心改造：精细化动态字段过滤 (Select 控制)
+        // ==========================================
+        if (parameters != null && !parameters.isEmpty()) {
+            List<String> selectCols = new ArrayList<>();
+            // 🛡️ 强制保留的“骨架字段”：用于计算夜间违规、周末异常等 status，绝对不能丢！
+            selectCols.add("id");
+            selectCols.add("`timestamp`");
+            selectCols.add("building_id");
+            selectCols.add("electricity");
+            selectCols.add("hour");
+            selectCols.add("is_weekend");
+            selectCols.add("air_temperature");
+
+            // 📊 根据前端请求动态附加的指标
+            if (parameters.contains("chilledwater")) {
+                selectCols.add("chilledwater");
+            }
+            if (parameters.contains("cop")) {
+                selectCols.add("cop");
+            }
+
+            wrapper.select(selectCols.toArray(new String[0]));
+        }
+        // ==========================================
 
         // 执行底层物理分页查询
         Page<BuildingEnergyRecord> resultPage = this.page(page, wrapper);
@@ -83,31 +113,30 @@ public class BuildingEnergyRecordServiceImpl extends ServiceImpl<BuildingEnergyR
 
     // 智能判断时间粒度与预警
     @Override
-    public java.util.List<java.util.Map<String, Object>> getChartData(String buildingId, String targetDate, String timeUnit) {
+    // 🚀 修复点 3：方法签名这里也必须加上 List<String> parameters！
+    public java.util.List<java.util.Map<String, Object>> getChartData(String buildingId, String targetDate, String timeUnit, List<String> parameters) {
         java.time.LocalDate date = java.time.LocalDate.parse(targetDate, java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         String startTime = "";
         String endTime = "";
         String format = "";
 
-        // 🚀 优化点：统一将前端选中的日期作为“起始日 (startTime)”
+        // 优化点：统一将前端选中的日期作为“起始日 (startTime)”
         if ("day".equals(timeUnit)) {
             startTime = date.atTime(java.time.LocalTime.MIN).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             endTime = date.atTime(java.time.LocalTime.MAX).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             format = "%H:00"; // X轴显示时间
         } else if ("week".equals(timeUnit)) {
             startTime = date.atTime(java.time.LocalTime.MIN).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            // 往后推 6 天（包含当天一共 7 天）作为结束日
             endTime = date.plusDays(6).atTime(java.time.LocalTime.MAX).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             format = "%m-%d"; // X轴显示日期
         } else if ("month".equals(timeUnit)) {
             startTime = date.atTime(java.time.LocalTime.MIN).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            // 往后推 29 天（包含当天一共 30 天）作为结束日
             endTime = date.plusDays(29).atTime(java.time.LocalTime.MAX).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             format = "%m-%d"; // X轴显示日期
         }
 
-        // 调用 Mapper 聚合
-        java.util.List<java.util.Map<String, Object>> list = this.baseMapper.getAggregatedChartData(buildingId, startTime, endTime, format);
+        // 🚀 此处完美传入 parameters
+        java.util.List<java.util.Map<String, Object>> list = this.baseMapper.getAggregatedChartData(buildingId, startTime, endTime, format, parameters);
 
         // 内存动态预警
         for (java.util.Map<String, Object> map : list) {
