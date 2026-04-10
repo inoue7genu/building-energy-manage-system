@@ -7,6 +7,10 @@ spring:
 
   # 🤖 核心修复：ai 必须紧跟在 spring 下面（缩进2个空格），和 datasource 平级！
   ai:
+    # 👇 1. 新增这块：强制干掉本地的英文瞎子模型！
+    transformers:
+      embedding:
+        enabled: false
     openai:
       # 你们的通义千问 API Key
       api-key: sk-244e27e02e404ef3aa4aa5be5765f169
@@ -16,6 +20,9 @@ spring:
         options:
           # 指定要使用的模型名字
           model: qwen3-max
+      embedding:
+        options:
+          model: text-embedding-v2
 
 mybatis-plus:
   configuration:
