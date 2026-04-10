@@ -1,5 +1,4 @@
 <template>
-
   <div class="data-query-container">
     <el-config-provider :locale="zhCn || {}">
 
@@ -46,6 +45,14 @@
             </div>
           </div>
 
+          <div class="filter-item">
+            <span class="filter-label">监测指标</span>
+            <el-checkbox-group v-model="selectedParams" class="cyber-checkbox-group" @change="handleSearch">
+              <el-checkbox v-for="param in availableParams" :key="param.value" :value="param.value"> {{ param.label }}
+              </el-checkbox>
+            </el-checkbox-group>
+          </div>
+
           <el-button type="primary" class="cyber-btn search-btn" @click="handleSearch">
             <el-icon>
               <Search />
@@ -65,6 +72,7 @@
       <div class="table-wrapper">
         <el-table v-loading="loading" :data="tableData" element-loading-background="rgba(11, 9, 26, 0.8)"
           element-loading-text="数据检索中..." class="cyber-table" height="100%" stripe>
+
           <el-table-column prop="id" label="流水号" width="100" align="center" />
           <el-table-column prop="timestamp" label="记录时间" width="200" align="center">
             <template #default="scope">
@@ -74,17 +82,26 @@
             </template>
           </el-table-column>
           <el-table-column prop="buildingId" label="建筑节点标识" min-width="200" />
-          <el-table-column prop="electricity" label="耗电量 (kWh)" width="150" align="right">
+
+          <el-table-column v-if="selectedParams.includes('electricity')" prop="electricity" label="耗电量 (kWh)"
+            width="150" align="right">
             <template #default="scope">
               {{ scope.row.electricity ? Number(scope.row.electricity).toFixed(2) : '0.00' }}
             </template>
           </el-table-column>
-          <el-table-column prop="chilledwater" label="冷负荷 (kWh)" width="150" align="right">
+
+          <el-table-column v-if="selectedParams.includes('chilledwater')" prop="chilledwater" label="冷负荷 (kWh)"
+            width="150" align="right">
             <template #default="scope">
               {{ scope.row.chilledwater ? Number(scope.row.chilledwater).toFixed(2) : '0.00' }}
             </template>
           </el-table-column>
-          <el-table-column prop="airTemperature" label="室外温度 (℃)" width="120" align="right" />
+
+          <el-table-column v-if="selectedParams.includes('airTemperature')" prop="airTemperature" label="室外温度 (℃)"
+            width="120" align="right" />
+
+          <el-table-column v-if="selectedParams.includes('cop')" prop="cop" label="系统 COP" width="120" align="center" />
+
           <el-table-column prop="status" label="智能诊断状态" width="160" align="center" fixed="right">
             <template #default="scope">
               <el-tag v-if="scope.row.status === 'normal'" type="success" effect="dark" class="cyber-tag">运行正常</el-tag>
@@ -160,7 +177,6 @@
           </span>
         </template>
       </el-dialog>
-
 
     </el-config-provider>
   </div>
@@ -359,11 +375,26 @@ const resetDateRange = () => {
 const fetchTableData = async () => {
   loading.value = true
   try {
+    // 💡 确保至少选中一项，否则没有意义
+    if (selectedParams.value.length === 0) {
+      ElMessage.warning('请至少选择一项监测指标')
+      loading.value = false
+      return
+    }
+
+    // 🚀 修复点2：使用正确的 queryParams.current 和 queryParams.size
     let url = `http://localhost:8080/api/energy/page?current=${queryParams.current}&size=${queryParams.size}`
-    if (queryParams.buildingId) url += `&buildingId=${queryParams.buildingId}`
+
+    if (queryParams.buildingId) {
+      url += `&buildingId=${queryParams.buildingId}`
+    }
     if (dateRange.value && dateRange.value.length === 2) {
       url += `&startDate=${dateRange.value[0]}&endDate=${dateRange.value[1]}`
     }
+
+    // 🚀 拼接上选中的参数列表
+    url += `&parameters=${selectedParams.value.join(',')}`
+
     const res = await axios.get(url)
     tableData.value = res.data?.records || []
     total.value = res.data?.total || 0
@@ -371,12 +402,16 @@ const fetchTableData = async () => {
     console.error('获取表格失败', error)
     tableData.value = []
     total.value = 0
+  } finally {
+    loading.value = false
   }
-  finally { loading.value = false }
 }
 
 /* ==========================================
    🚀 BEMS Copilot: 异常数据一键联动分析
+========================================== */
+/* ==========================================
+   🚀 BEMS Copilot: 异常数据一键联动分析 (动态参数适配版)
 ========================================== */
 const analyzeAnomaly = (row) => {
   if (!callBemsAi) {
@@ -388,10 +423,27 @@ const analyzeAnomaly = (row) => {
   const statusName = row.status === 'night_abnormal' ? '夜间违规耗电' : '严重能耗异常'
   const timeStr = row.timestamp ? String(row.timestamp).replace('T', ' ') : '未知时间'
 
-  // 2. 组装专业级的 Prompt (完美契合我们后端的知识库检索)
-  const prompt = `系统告警：建筑节点【${row.buildingId}】在【${timeStr}】触发了【${statusName}】。当前实测耗电量为 ${row.electricity} kWh，冷负荷为 ${row.chilledwater} kWh。请结合内部知识库，告诉我这条异常的判定逻辑是什么，并给出具体的故障排查步骤。`
+  // 2. 🚀 动态探查当前 row 里存在哪些指标数据，并自动拼装
+  let metrics = []
+  if (row.electricity !== undefined && row.electricity !== null) {
+    metrics.push(`耗电量 ${Number(row.electricity).toFixed(2)} kWh`)
+  }
+  if (row.chilledwater !== undefined && row.chilledwater !== null) {
+    metrics.push(`冷负荷 ${Number(row.chilledwater).toFixed(2)} kWh`)
+  }
+  if (row.airTemperature !== undefined && row.airTemperature !== null) {
+    metrics.push(`室外温度 ${Number(row.airTemperature).toFixed(2)} ℃`)
+  }
+  if (row.cop !== undefined && row.cop !== null) {
+    metrics.push(`系统 COP 为 ${Number(row.cop).toFixed(2)}`)
+  }
 
-  // 3. 呼叫全局悬浮窗！
+  const metricsStr = metrics.length > 0 ? `当前实测${metrics.join('，')}。` : '当前暂无具体的实测指标数据。'
+
+  // 3. 组装终极 Prompt
+  const prompt = `系统告警：建筑节点【${row.buildingId}】在【${timeStr}】触发了【${statusName}】。${metricsStr}请结合内部知识库，告诉我这条异常的判定逻辑是什么，并给出具体的故障排查步骤。`
+
+  // 4. 呼叫全局悬浮窗！
   callBemsAi(prompt)
 }
 
@@ -451,6 +503,17 @@ const executeExport = async () => {
     ElMessage.success('报表导出完成！')
   } finally { isExporting.value = false }
 }
+
+// 💡 定义用户当前选中的监测指标（默认选中耗电量和冷冻水）
+const selectedParams = ref(['electricity', 'chilledwater', 'airTemperature']);
+
+// 可供选择的指标字典（用于渲染复选框）
+const availableParams = [
+  { label: '耗电量 (kWh)', value: 'electricity' },
+  { label: '冷冻水负荷 (kWh)', value: 'chilledwater' },
+  { label: '室内温度 (°C)', value: 'airTemperature' },
+  { label: '系统 COP', value: 'cop' }
+]
 
 onMounted(() => {
   fetchCalendarSummary()
@@ -871,6 +934,17 @@ onMounted(() => {
 
 .danger-tag.interactive-tag:hover {
   box-shadow: 0 0 12px #FF4D4F;
+}
+
+/* 赛博风复选框样式 */
+:deep(.cyber-checkbox-group .el-checkbox__input.is-checked .el-checkbox__inner) {
+  background-color: #00F0FF;
+  border-color: #00F0FF;
+}
+
+:deep(.cyber-checkbox-group .el-checkbox__input.is-checked + .el-checkbox__label) {
+  color: #00F0FF;
+  text-shadow: 0 0 5px rgba(0, 240, 255, 0.4);
 }
 </style>
 
