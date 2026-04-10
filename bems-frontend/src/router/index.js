@@ -7,7 +7,7 @@ const routes = [
   { path: '/', redirect: '/dashboard' }, // 默认打开直接跳转到大屏
   { path: '/dashboard', name: 'Dashboard', component: Dashboard },
   { path: '/query', name: 'DataQuery', component: DataQuery },
-  { path: '/diagnosis', name: 'SmartDiagnosis', component: SmartDiagnosis }
+
 ]
 
 const router = createRouter({

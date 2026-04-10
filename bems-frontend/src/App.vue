@@ -20,11 +20,14 @@
             <Search />
           </el-icon>数据中心与报表
         </el-menu-item>
-        <el-menu-item index="/diagnosis">
-          <el-icon>
-            <Cpu />
-          </el-icon>AI 智能运维大脑
-        </el-menu-item>
+
+        <div class="ai-trigger-wrapper">
+          <el-button class="cyber-ai-btn pulse-glow" @click="triggerAi">
+            <el-icon>
+              <Cpu />
+            </el-icon> BEMS Copilot
+          </el-button>
+        </div>
       </el-menu>
     </div>
 
@@ -35,15 +38,34 @@
         </transition>
       </router-view>
     </div>
+
+    <GlobalAiAssistant ref="aiAssistantRef" />
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, provide } from 'vue' // 新增 provide
 import { useRoute } from 'vue-router'
+import { DataLine, Search, Cpu, Odometer } from '@element-plus/icons-vue'
+import GlobalAiAssistant from './components/GlobalAiAssistant.vue'
 
 const route = useRoute()
 const activeIndex = computed(() => route.path)
+
+const aiAssistantRef = ref(null)
+
+// 普通唤醒
+const triggerAi = () => {
+  if (aiAssistantRef.value) aiAssistantRef.value.openAssistant()
+}
+
+// 带参唤醒 (供底层子页面调用)
+const triggerAiWithContext = (promptText) => {
+  if (aiAssistantRef.value) aiAssistantRef.value.openAssistant(promptText)
+}
+
+// 💡 注册全局通信频道，任何页面都可以一键呼叫 AI
+provide('callBemsAi', triggerAiWithContext)
 </script>
 
 <style>

@@ -88,10 +88,19 @@
           <el-table-column prop="status" label="智能诊断状态" width="160" align="center" fixed="right">
             <template #default="scope">
               <el-tag v-if="scope.row.status === 'normal'" type="success" effect="dark" class="cyber-tag">运行正常</el-tag>
+
               <el-tag v-else-if="scope.row.status === 'night_abnormal'" type="warning" effect="dark"
-                class="cyber-tag warning-tag">夜间违规耗电</el-tag>
+                class="cyber-tag warning-tag interactive-tag" title="点击呼叫 BEMS Copilot 深度诊断"
+                @click="analyzeAnomaly(scope.row)">
+                夜间违规耗电 ⚡
+              </el-tag>
+
               <el-tag v-else-if="scope.row.status === 'critical_abnormal'" type="danger" effect="dark"
-                class="cyber-tag danger-tag">严重能耗异常</el-tag>
+                class="cyber-tag danger-tag interactive-tag" title="点击呼叫 BEMS Copilot 深度诊断"
+                @click="analyzeAnomaly(scope.row)">
+                严重能耗异常 🚨
+              </el-tag>
+
               <el-tag v-else type="info" effect="dark" class="cyber-tag">未知异常</el-tag>
             </template>
           </el-table-column>
@@ -159,11 +168,15 @@
 
 <script setup>
 /* 🚀 声明区：将所有依赖变量提至最顶端，彻底消灭 ReferenceError！ */
-import { ref, reactive, onMounted } from 'vue'
+// 💡 修改 import，加上 inject
+import { ref, reactive, onMounted, inject } from 'vue'
 import { Search, Download, RefreshLeft, Link } from '@element-plus/icons-vue'
 import axios from 'axios'
 import { ElMessage, ElConfigProvider } from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
+
+// 💡 接入 App.vue 提供的全局 AI 呼叫引线
+const callBemsAi = inject('callBemsAi')
 
 // 1. 全局状态声明
 const loading = ref(false)
@@ -360,6 +373,26 @@ const fetchTableData = async () => {
     total.value = 0
   }
   finally { loading.value = false }
+}
+
+/* ==========================================
+   🚀 BEMS Copilot: 异常数据一键联动分析
+========================================== */
+const analyzeAnomaly = (row) => {
+  if (!callBemsAi) {
+    ElMessage.warning('AI 智能中枢未连接，请稍后再试')
+    return
+  }
+
+  // 1. 提取当前行的核心特征
+  const statusName = row.status === 'night_abnormal' ? '夜间违规耗电' : '严重能耗异常'
+  const timeStr = row.timestamp ? String(row.timestamp).replace('T', ' ') : '未知时间'
+
+  // 2. 组装专业级的 Prompt (完美契合我们后端的知识库检索)
+  const prompt = `系统告警：建筑节点【${row.buildingId}】在【${timeStr}】触发了【${statusName}】。当前实测耗电量为 ${row.electricity} kWh，冷负荷为 ${row.chilledwater} kWh。请结合内部知识库，告诉我这条异常的判定逻辑是什么，并给出具体的故障排查步骤。`
+
+  // 3. 呼叫全局悬浮窗！
+  callBemsAi(prompt)
 }
 
 const handleSearch = () => { queryParams.current = 1; fetchTableData() }
@@ -819,6 +852,25 @@ onMounted(() => {
 
 .pulse-btn:hover {
   box-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+}
+
+/* 异常标签悬浮互动特效 */
+.interactive-tag {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.interactive-tag:hover {
+  transform: scale(1.05);
+  filter: brightness(1.2);
+}
+
+.warning-tag.interactive-tag:hover {
+  box-shadow: 0 0 12px #FAAD14;
+}
+
+.danger-tag.interactive-tag:hover {
+  box-shadow: 0 0 12px #FF4D4F;
 }
 </style>
 
