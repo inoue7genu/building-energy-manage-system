@@ -21,7 +21,7 @@
             <div class="date-range-wrapper">
               <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="开始日期"
                 end-placeholder="结束日期" value-format="YYYY-MM-DD" class="custom-date-range" :disabled-date="disabledDate"
-                :default-value="[new Date(2016, 6, 1), new Date(2016, 7, 1)]" unlink-panels>
+                :default-value="[new Date(2016, 6, 1), new Date(2016, 7, 1)]" unlink-panels @change="handleSearch">
                 <template #default="cell">
                   <div class="custom-cell" :class="{
                     'is-start': cell?.start,
@@ -60,7 +60,16 @@
           </el-button>
         </div>
 
-        <div class="filter-right">
+        <div class="filter-right" style="display: flex; gap: 10px;">
+          <el-upload action="http://localhost:8080/api/energy/upload" :show-file-list="false"
+            :on-success="handleUploadSuccess" :on-error="handleUploadError" accept=".xlsx, .xls">
+            <el-button type="primary" class="cyber-btn upload-btn" title="批量导入历史 .xlsx 数据">
+              <el-icon>
+                <Upload />
+              </el-icon> 数据融合 (导入)
+            </el-button>
+          </el-upload>
+
           <el-button type="success" class="cyber-btn export-btn" @click="openExportDialog">
             <el-icon>
               <Download />
@@ -186,7 +195,7 @@
 /* 🚀 声明区：将所有依赖变量提至最顶端，彻底消灭 ReferenceError！ */
 // 💡 修改 import，加上 inject
 import { ref, reactive, onMounted, inject } from 'vue'
-import { Search, Download, RefreshLeft, Link } from '@element-plus/icons-vue'
+import { Search, Download, RefreshLeft, Link, Upload } from '@element-plus/icons-vue'
 import axios from 'axios'
 import { ElMessage, ElConfigProvider } from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
@@ -464,44 +473,77 @@ const openExportDialog = () => {
   customPageRange.end = queryParams.current
 }
 
+/* ==========================================
+   🚀 导入成功回调
+========================================== */
+const handleUploadSuccess = (response) => {
+  if (response.code === 200) {
+    ElMessage.success('历史数据融合成功，正在重新校准基座...')
+    fetchTableData() // 刷新表格
+  } else {
+    ElMessage.error('融合失败：' + response.msg)
+  }
+}
+const handleUploadError = () => {
+  ElMessage.error('网络连接中断，数据融合失败')
+}
+
+/* ==========================================
+   🚀 终极重构：对接后端 EasyExcel 下载流 (支持多模式切片)
+========================================== */
 const executeExport = async () => {
   isExporting.value = true
   try {
-    let exportData = []
-    if (exportMode.value === 'current') {
-      exportData = tableData.value
-    } else {
-      let startPage = exportMode.value === 'all' ? 1 : customPageRange.start
-      let endPage = exportMode.value === 'all' ? Math.ceil(total.value / queryParams.size) : customPageRange.end
-      if (startPage > endPage) { ElMessage.error('起始页不能大于结束页'); isExporting.value = false; return }
-
-      for (let p = startPage; p <= endPage; p++) {
-        let url = `http://localhost:8080/api/energy/page?current=${p}&size=${queryParams.size}`
-        if (queryParams.buildingId) url += `&buildingId=${queryParams.buildingId}`
-        if (dateRange.value && dateRange.value.length === 2) {
-          url += `&startDate=${dateRange.value[0]}&endDate=${dateRange.value[1]}`
-        }
-        const res = await axios.get(url)
-        if (res.data?.records) exportData.push(...res.data.records)
-      }
+    // 1. 基础参数构建：继承当前的搜索框条件
+    let url = `http://localhost:8080/api/energy/export?`
+    if (queryParams.buildingId) url += `buildingId=${queryParams.buildingId}&`
+    if (dateRange.value && dateRange.value.length === 2) {
+      url += `startDate=${dateRange.value[0]}&endDate=${dateRange.value[1]}&`
     }
-    let csv = '\uFEFF' + "流水号,记录时间,建筑节点标识,耗电量(kWh),冷负荷(kWh),室外温度(℃),智能诊断状态\n"
-    exportData.forEach(r => {
-      const st = { 'normal': '运行正常', 'night_abnormal': '夜间违规耗电', 'critical_abnormal': '严重能耗异常' }[r.status] || r.status
-      csv += `${r.id},${r.timestamp ? String(r.timestamp).replace('T', ' ') : ''},${r.buildingId},${r.electricity},${r.chilledwater},${r.airTemperature},${st}\n`
-    })
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.download = `BEMS_能耗审计报表_${new Date().getTime()}.csv`
-    link.style.visibility = 'hidden'
+    // 同时也带上当前选中的监测指标，确保 Excel 表头对应
+    if (selectedParams.value.length > 0) {
+      url += `parameters=${selectedParams.value.join(',')}&`
+    }
+
+    // 2. 🚀 核心逻辑：根据导出模式(exportMode) 注入切片参数
+    if (exportMode.value === 'current') {
+      // 模式 A：仅当前视图 (携带当前页码和每页条数)
+      url += `current=${queryParams.current}&size=${queryParams.size}`
+    } else if (exportMode.value === 'all') {
+      // 模式 B：全局检索 (不传分页参数，后端将默认导出所有匹配的数据)
+      // 注意：这里什么都不加，后端接口会处理为导出全量
+    } else if (exportMode.value === 'custom') {
+      // 模式 C：自定义切片范围 (计算需要导出的起始和结束记录)
+      // 我们将自定义的页码范围转换给后端
+      url += `startPage=${customPageRange.start}&endPage=${customPageRange.end}&size=${queryParams.size}`
+    }
+
+    // 3. 发送请求：必须告诉 Axios 我们接收的是二进制文件流 (blob)
+    const res = await axios.get(url, { responseType: 'blob' })
+
+    // 4. 模拟 A 标签下载
+    const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const downloadUrl = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = downloadUrl
+
+    // 生成动态文件名，标识导出模式
+    const modeName = exportMode.value === 'all' ? '全局全量' : '数据切片'
+    link.setAttribute('download', `BEMS_能耗审计_${modeName}_${new Date().getTime()}.xlsx`)
+
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+    window.URL.revokeObjectURL(downloadUrl)
+
     exportDialogVisible.value = false
-    ElMessage.success('报表导出完成！')
-  } finally { isExporting.value = false }
+    ElMessage.success(`报表导出成功！已成功提取并封装数据流。`)
+  } catch (error) {
+    console.error('导出失败', error)
+    ElMessage.error('导出中枢响应异常，请检查后端服务')
+  } finally {
+    isExporting.value = false
+  }
 }
 
 // 💡 定义用户当前选中的监测指标（默认选中耗电量和冷冻水）
