@@ -23,4 +23,8 @@ public interface IBuildingEnergyRecordService extends IService<BuildingEnergyRec
 
     // 获取动态聚合的图表数据
     java.util.List<java.util.Map<String, Object>> getChartData(String buildingId, String targetDate, String timeUnit, List<String> parameters);
+
+    // 新增：用于导出的无分页全量查询
+    List<BuildingEnergyRecord> queryAllForExport(String buildingId, String startDate, String endDate);
+
 }

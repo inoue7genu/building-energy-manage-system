@@ -42,7 +42,8 @@ public interface BuildingEnergyRecordMapper extends BaseMapper<BuildingEnergyRec
             "<if test='parameters == null or parameters.contains(\"chilledwater\")'>, SUM(chilledwater) AS chilledwater</if> " +
             "FROM building_energy_records " +
             "WHERE building_id = #{buildingId} " +
-            "AND `timestamp` >= #{startTime} AND `timestamp` <= #{endTime} " +
+            // 🚀 核心修复：将 >= 改为 &gt;=，将 <= 改为 &lt;=
+            "AND `timestamp` &gt;= #{startTime} AND `timestamp` &lt;= #{endTime} " +
             "GROUP BY timeLabel " +
             "ORDER BY timeLabel ASC" +
             "</script>")
@@ -51,6 +52,5 @@ public interface BuildingEnergyRecordMapper extends BaseMapper<BuildingEnergyRec
             @Param("startTime") String startTime,
             @Param("endTime") String endTime,
             @Param("format") String format,
-            // 👇 新增传入参数
             @Param("parameters") List<String> parameters);
 }

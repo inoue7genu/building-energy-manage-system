@@ -46,7 +46,8 @@ public class EnergyQueryTools {
             System.out.println("   -> 提取到的查询日期: " + request.date());
 
             // 1. 调用你们现成的真实业务接口查出当天 24 小时的数据
-            List<Map<String, Object>> chartData = energyService.getChartData(request.buildingId(), request.date(), "day");
+            // 🚀 补上第四个参数 null，告诉底层引擎：AI 需要全量指标数据进行分析！
+            List<Map<String, Object>> chartData = energyService.getChartData(request.buildingId(), request.date(), "day", null);
 
             // 2. 统计这 24 小时的数据，计算总电量并捕捉异常
             double totalElec = 0.0;
