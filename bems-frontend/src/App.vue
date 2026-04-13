@@ -340,4 +340,54 @@ html {
   opacity: 0;
   transform: translateX(-15px);
 }
+
+/* =========================================
+   侧边栏收起状态下的图标居中 (Element Plus 专属优化)
+========================================= */
+
+/* 1. 收起时菜单项本身居中 */
+.el-menu--collapse .el-menu-item {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 !important;
+}
+
+/* 2. 🎯 核心修复：强行居中 Element Plus 自动生成的 tooltip 隐藏包裹层，并清除它的默认边距 */
+.el-menu--collapse .el-tooltip__trigger {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 0 !important;
+  width: 100%;
+}
+
+/* 3. 图标微调，去偏移 */
+.el-menu--collapse .el-menu-item .el-icon {
+  margin: 0 !important;
+  font-size: 22px;
+  /* 适当放大图标，显得更饱满 */
+}
+
+/* 4. 侧边栏收起时的宽度微调，让它更窄更精致 */
+.sidebar-wrapper.collapsed {
+  width: 72px;
+}
+
+/* 5. 修复折叠按钮的居中对齐 */
+.collapse-trigger {
+  height: 48px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  border-top: 1px solid var(--border-color);
+  color: #a0a2b8;
+  transition: color 0.3s, background-color 0.3s;
+}
+
+.collapse-trigger:hover {
+  color: var(--accent-cyan);
+  background-color: rgba(0, 240, 255, 0.05);
+}
 </style>

@@ -1,15 +1,15 @@
 <template>
     <div class="ai-copilot-container">
-        <div class="floating-btn pulse-glow" @click="toggleAssistant" v-show="!visible">
+        <div class="floating-btn pulse-glow" ref="floatingBtnRef" @mousedown="handleBtnMouseDown" v-show="!visible">
             <el-icon :size="28">
                 <Cpu />
             </el-icon>
         </div>
 
         <transition name="pop-up">
-            <div v-show="visible" class="floating-chat-panel cyber-panel">
+            <div v-show="visible" class="floating-chat-panel cyber-panel" ref="chatPanelRef">
 
-                <div class="panel-header">
+                <div class="panel-header" @mousedown="handleMouseDown">
                     <div class="header-left">
                         <el-icon class="pulse-icon">
                             <Odometer />
@@ -62,6 +62,114 @@ const inputMessage = ref('')
 const isTyping = ref(false)
 const chatHistoryRef = ref(null)
 
+// --- 悬浮球拖拽专用逻辑 ---
+const floatingBtnRef = ref(null);
+let isDraggingBtn = false; // 用于区分是“拖拽”还是“点击”
+
+const handleBtnMouseDown = (e) => {
+    const el = floatingBtnRef.value;
+    if (!el) return;
+
+    isDraggingBtn = false; // 按下时重置拖拽标记
+    const startX = e.clientX;
+    const startY = e.clientY;
+
+    const rect = el.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+
+    // 冻结当前坐标，接管 CSS 的 right 和 bottom
+    el.style.left = rect.left + 'px';
+    el.style.top = rect.top + 'px';
+    el.style.right = 'auto';
+    el.style.bottom = 'auto';
+    el.style.transition = 'none'; // 拖拽时取消 CSS 动画，防止跟手卡顿
+
+    const handleMouseMove = (moveEvent) => {
+        moveEvent.preventDefault();
+
+        // 计算移动距离
+        const dx = moveEvent.clientX - startX;
+        const dy = moveEvent.clientY - startY;
+
+        // ⚠️ 核心：如果移动距离超过 3 像素，判定为拖拽操作
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+            isDraggingBtn = true;
+        }
+
+        let newLeft = moveEvent.clientX - offsetX;
+        let newTop = moveEvent.clientY - offsetY;
+
+        // 屏幕边界碰撞检测
+        newLeft = Math.max(0, Math.min(window.innerWidth - rect.width, newLeft));
+        newTop = Math.max(0, Math.min(window.innerHeight - rect.height, newTop));
+
+        el.style.left = newLeft + 'px';
+        el.style.top = newTop + 'px';
+    };
+
+    const handleMouseUp = () => {
+        el.style.transition = 'all 0.3s ease'; // 恢复原来的 CSS hover 动画
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+
+        // ⚠️ 核心修复点：在这里判断，如果没有发生拖拽，就视为“点击”，执行打开逻辑
+        if (!isDraggingBtn) {
+            toggleAssistant();
+        }
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+};
+
+
+const chatPanelRef = ref(null);
+const position = ref({ x: 0, y: 0 }); // 记录偏移量
+
+const handleMouseDown = (e) => {
+    const el = chatPanelRef.value;
+    if (!el) return;
+
+    // 1. 获取面板当前的真实物理位置和尺寸（不受 right/bottom 影响）
+    const rect = el.getBoundingClientRect();
+
+    // 2. 计算鼠标点击点距离面板左上角的偏移量
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+
+    // 3. ⚠️ 关键步骤：冻结当前坐标，彻底解除 CSS 的 right 和 bottom 锁定
+    el.style.left = rect.left + 'px';
+    el.style.top = rect.top + 'px';
+    el.style.right = 'auto';
+    el.style.bottom = 'auto';
+
+    const handleMouseMove = (moveEvent) => {
+        // 防止选中文字等默认行为导致拖拽卡顿
+        moveEvent.preventDefault();
+
+        // 4. 计算移动后的新坐标
+        let newLeft = moveEvent.clientX - offsetX;
+        let newTop = moveEvent.clientY - offsetY;
+
+        // 5. 屏幕边界碰撞检测（保证悬浮框不会被拖出屏幕外面）
+        newLeft = Math.max(0, Math.min(window.innerWidth - rect.width, newLeft));
+        newTop = Math.max(0, Math.min(window.innerHeight - rect.height, newTop));
+
+        // 6. 更新位置
+        el.style.left = newLeft + 'px';
+        el.style.top = newTop + 'px';
+    };
+
+    const handleMouseUp = () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+};
+
 const chatList = ref([
     {
         role: 'ai',
@@ -71,8 +179,8 @@ const chatList = ref([
 
 // 切换面板显示状态
 const toggleAssistant = () => {
-    visible.value = !visible.value
-    if (visible.value) scrollToBottom()
+    visible.value = !visible.value;
+    if (visible.value) scrollToBottom();
 }
 
 // 💡 暴露给全局调用的唤醒方法，支持带参数自动质询
@@ -220,6 +328,17 @@ const parseMarkdown = (text) => {
     display: flex;
     align-items: center;
     justify-content: space-between;
+
+    cursor: grab;
+    /* 鼠标移上去变成张开的小手 */
+    user-select: none;
+    /* 防止拖拽时意外选中文字变蓝，影响观感 */
+}
+
+/* 拖拽按下时的鼠标样式 */
+.panel-header:active {
+    cursor: grabbing;
+    /* 鼠标按下时变成抓取状态 */
 }
 
 .header-left {
