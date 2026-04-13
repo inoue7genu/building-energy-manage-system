@@ -225,9 +225,20 @@ const sendMessage = () => {
         scrollToBottom()
     }
 
-    eventSource.onerror = () => {
+    eventSource.onerror = (error) => {
         isTyping.value = false
         eventSource.close()
+
+        // 🚨 新增：捕获异常并给用户友好的提示
+        const lastMsgIndex = chatList.value.length - 1
+        if (chatList.value[lastMsgIndex].content === '') {
+            // 如果 AI 一句话都没回就断了
+            chatList.value[lastMsgIndex].content = '⚠️ **中枢连接异常**：大模型服务响应超时或知识库上下文超载。请联系系统管理员检查 RAG 参数或 API 状态。'
+        } else {
+            // 如果说到一半断了
+            chatList.value[lastMsgIndex].content += '\n\n*(信号中断，停止输出)*'
+        }
+        scrollToBottom()
     }
 }
 
