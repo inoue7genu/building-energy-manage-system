@@ -1,50 +1,60 @@
 <template>
-    <el-drawer v-model="visible" title="BEMS_COPILOT_V2 // 智能运维大脑" direction="rtl" size="450px" class="cyber-drawer"
-        :with-header="false" append-to-body>
-        <div class="diagnosis-container-drawer">
-            <div class="panel-header">
-                <el-icon class="pulse-icon">
-                    <Odometer />
-                </el-icon>
-                <span>BEMS 全局智能中枢</span>
-                <el-button link class="close-btn" @click="visible = false">
-                    <el-icon :size="20">
-                        <Close />
-                    </el-icon>
-                </el-button>
-            </div>
+    <div class="ai-copilot-container">
+        <div class="floating-btn pulse-glow" @click="toggleAssistant" v-show="!visible">
+            <el-icon :size="28">
+                <Cpu />
+            </el-icon>
+        </div>
 
-            <div class="chat-panel">
-                <div class="chat-history" ref="chatHistoryRef">
-                    <div v-for="(msg, index) in chatList" :key="index" class="message-wrapper"
-                        :class="msg.role === 'user' ? 'is-user' : 'is-ai'">
-                        <div class="avatar">{{ msg.role === 'user' ? 'You' : 'AI' }}</div>
-                        <div class="message-bubble">
-                            <div class="markdown-body" v-html="parseMarkdown(msg.content)"></div>
-                            <span v-if="isTyping && index === chatList.length - 1 && msg.role === 'ai'"
-                                class="cursor">_</span>
-                        </div>
+        <transition name="pop-up">
+            <div v-show="visible" class="floating-chat-panel cyber-panel">
+
+                <div class="panel-header">
+                    <div class="header-left">
+                        <el-icon class="pulse-icon">
+                            <Odometer />
+                        </el-icon>
+                        <span>BEMS Copilot 智能大脑</span>
                     </div>
-                </div>
-
-                <div class="input-area">
-                    <el-input v-model="inputMessage" type="textarea" :rows="3" placeholder="输入系统诊断指令，按 Enter 发送..."
-                        class="cyber-textarea" @keydown.enter.prevent="sendMessage" :disabled="isTyping" />
-                    <el-button type="primary" class="cyber-btn send-btn pulse-btn" @click="sendMessage"
-                        :loading="isTyping">
-                        <el-icon>
-                            <Position />
-                        </el-icon> 发 送
+                    <el-button link class="close-btn" @click="visible = false">
+                        <el-icon :size="20">
+                            <Close />
+                        </el-icon>
                     </el-button>
                 </div>
+
+                <div class="chat-panel">
+                    <div class="chat-history" ref="chatHistoryRef">
+                        <div v-for="(msg, index) in chatList" :key="index" class="message-wrapper"
+                            :class="msg.role === 'user' ? 'is-user' : 'is-ai'">
+                            <div class="avatar">{{ msg.role === 'user' ? 'You' : 'AI' }}</div>
+                            <div class="message-bubble">
+                                <div class="markdown-body" v-html="parseMarkdown(msg.content)"></div>
+                                <span v-if="isTyping && index === chatList.length - 1 && msg.role === 'ai'"
+                                    class="cursor">_</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-area">
+                        <el-input v-model="inputMessage" type="textarea" :rows="2" placeholder="输入系统诊断指令，按 Enter 发送..."
+                            class="cyber-textarea" @keydown.enter.prevent="sendMessage" :disabled="isTyping" />
+                        <el-button type="primary" class="cyber-btn send-btn pulse-btn" @click="sendMessage"
+                            :loading="isTyping">
+                            <el-icon :size="20">
+                                <Position />
+                            </el-icon>
+                        </el-button>
+                    </div>
+                </div>
             </div>
-        </div>
-    </el-drawer>
+        </transition>
+    </div>
 </template>
 
 <script setup>
 import { ref, nextTick } from 'vue'
-import { Odometer, Position, Close } from '@element-plus/icons-vue'
+import { Odometer, Position, Close, Cpu } from '@element-plus/icons-vue'
 import { marked } from 'marked'
 
 const visible = ref(false)
@@ -55,9 +65,15 @@ const chatHistoryRef = ref(null)
 const chatList = ref([
     {
         role: 'ai',
-        content: '指挥官您好，我是 BEMS 全局智能大脑。已悬浮待命，随时为您进行数据探查与诊断。'
+        content: '指挥官您好，我是 BEMS 全局智能大脑。已悬浮待命，随时为您进行能源数据探查与诊断。'
     }
 ])
+
+// 切换面板显示状态
+const toggleAssistant = () => {
+    visible.value = !visible.value
+    if (visible.value) scrollToBottom()
+}
 
 // 💡 暴露给全局调用的唤醒方法，支持带参数自动质询
 const openAssistant = (autoPrompt = '') => {
@@ -114,32 +130,112 @@ const parseMarkdown = (text) => {
 </script>
 
 <style scoped>
-/* 融合你原本的样式，适应抽屉布局 */
-.diagnosis-container-drawer {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    background-color: #05050f;
+.ai-copilot-container {
+    position: relative;
+    z-index: 9999;
 }
 
+/* --- 1. 悬浮唤醒按钮 --- */
+.floating-btn {
+    position: fixed;
+    right: 40px;
+    bottom: 40px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0b091a, #1f1d36);
+    border: 2px solid #00F0FF;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #00F0FF;
+    cursor: pointer;
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+.floating-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 25px rgba(0, 240, 255, 0.6);
+}
+
+.pulse-glow {
+    animation: glow 2s infinite alternate;
+}
+
+@keyframes glow {
+    from {
+        box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+    }
+
+    to {
+        box-shadow: 0 0 20px rgba(0, 240, 255, 0.6), 0 0 10px rgba(0, 255, 157, 0.4);
+    }
+}
+
+/* --- 2. 悬浮对话面板 (毛玻璃科技风) --- */
+.floating-chat-panel {
+    position: fixed;
+    right: 40px;
+    bottom: 120px;
+    /* 位于悬浮球上方 */
+    width: 420px;
+    height: 65vh;
+    /* 动态高度，适配各种屏幕 */
+    min-height: 500px;
+    background-color: rgba(11, 9, 26, 0.85);
+    /* 半透明极深蓝 */
+    backdrop-filter: blur(12px);
+    /* 毛玻璃滤镜 */
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid #2A2946;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 240, 255, 0.15);
+    overflow: hidden;
+}
+
+/* 动画效果 */
+.pop-up-enter-active,
+.pop-up-leave-active {
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.pop-up-enter-from,
+.pop-up-leave-to {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+    pointer-events: none;
+}
+
+/* --- 内部布局与样式 --- */
 .panel-header {
     padding: 15px 20px;
-    background-color: #0b091a;
+    background-color: rgba(5, 5, 15, 0.6);
     border-bottom: 1px solid #2A2946;
     color: #00F0FF;
     font-weight: bold;
-    font-size: 16px;
+    font-size: 15px;
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
 
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .close-btn {
     color: #a0a2b8;
+    transition: color 0.3s;
 }
 
 .close-btn:hover {
     color: #FF4D4F;
+    transform: rotate(90deg);
 }
 
 .chat-panel {
@@ -149,7 +245,6 @@ const parseMarkdown = (text) => {
     overflow: hidden;
 }
 
-/* ... (此处保留你 SmartDiagnosis.vue 中的 .chat-history, .message-wrapper, .avatar, .is-user, .is-ai, .input-area, .cyber-btn 等所有极客样式) ... */
 .chat-history {
     flex: 1;
     padding: 20px;
@@ -170,8 +265,8 @@ const parseMarkdown = (text) => {
 
 .message-wrapper {
     display: flex;
-    gap: 15px;
-    max-width: 90%;
+    gap: 12px;
+    max-width: 92%;
 }
 
 .is-user {
@@ -184,9 +279,9 @@ const parseMarkdown = (text) => {
 }
 
 .avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 4px;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -200,60 +295,63 @@ const parseMarkdown = (text) => {
     background: rgba(0, 255, 157, 0.1);
     color: #00FF9D;
     border-color: #00FF9D;
-    box-shadow: 0 0 10px rgba(0, 255, 157, 0.2);
 }
 
 .is-ai .avatar {
     background: rgba(0, 240, 255, 0.1);
     color: #00F0FF;
     border-color: #00F0FF;
-    box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
 }
 
 .message-bubble {
-    padding: 12px 16px;
+    padding: 10px 14px;
     border-radius: 8px;
     line-height: 1.6;
-    font-size: 14px;
+    font-size: 13px;
     position: relative;
+    word-break: break-all;
 }
 
 .is-user .message-bubble {
-    background: #00FF9D;
+    background: linear-gradient(135deg, #00FF9D, #00cc7e);
     color: #000;
     border-top-right-radius: 0;
+    font-weight: 500;
 }
 
 .is-ai .message-bubble {
-    background: rgba(11, 9, 26, 0.8);
+    background: rgba(30, 28, 48, 0.7);
     border: 1px solid #2A2946;
-    color: #fff;
+    color: #E0E2F5;
     border-top-left-radius: 0;
 }
 
 .cursor {
     display: inline-block;
-    width: 8px;
-    height: 15px;
+    width: 6px;
+    height: 14px;
     background-color: #00F0FF;
     margin-left: 2px;
+    vertical-align: middle;
     animation: blink 1s step-end infinite;
 }
 
 .input-area {
     padding: 15px;
-    background-color: #0b091a;
+    background-color: rgba(5, 5, 15, 0.8);
     border-top: 1px solid #2A2946;
     display: flex;
-    gap: 15px;
+    gap: 10px;
+    align-items: flex-end;
 }
 
 :deep(.cyber-textarea .el-textarea__inner) {
-    background-color: #05050f !important;
+    background-color: rgba(5, 5, 15, 0.5) !important;
     box-shadow: 0 0 0 1px #2A2946 inset !important;
     color: #00F0FF !important;
-    border-radius: 4px;
+    border-radius: 6px;
     font-family: monospace;
+    resize: none;
 }
 
 :deep(.cyber-textarea .el-textarea__inner:focus) {
@@ -261,15 +359,20 @@ const parseMarkdown = (text) => {
 }
 
 .cyber-btn {
-    background-color: #0b091a;
-    border: 1px solid;
-    font-weight: bold;
+    background-color: transparent;
+    border: 1px solid #00F0FF;
+    height: 52px;
+    /* 匹配两行 textarea 的高度 */
+    width: 52px;
+    border-radius: 6px;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .send-btn {
-    height: auto;
     color: #00F0FF;
-    border-color: #00F0FF;
 }
 
 .send-btn:hover {
@@ -277,41 +380,21 @@ const parseMarkdown = (text) => {
     box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
 }
 
+/* Markdown 样式覆盖 */
 :deep(.markdown-body) {
     color: #E0E2F5;
-    line-height: 1.6;
-    font-size: 13px;
 }
 
 :deep(.markdown-body p) {
-    margin-bottom: 8px;
+    margin-bottom: 6px;
+    margin-top: 0;
+}
+
+:deep(.markdown-body p:last-child) {
+    margin-bottom: 0;
 }
 
 :deep(.markdown-body strong) {
-    color: #00FF9D;
-    text-shadow: 0 0 5px rgba(0, 255, 157, 0.4);
-    font-weight: bold;
-}
-
-:deep(.markdown-body ul),
-:deep(.markdown-body ol) {
-    margin-left: 15px;
-    margin-bottom: 8px;
-}
-
-:deep(.markdown-body li::marker) {
     color: #00F0FF;
-}
-
-/* 深度定制 Element 抽屉底色 */
-:deep(.cyber-drawer) {
-    background-color: rgba(5, 5, 15, 0.95) !important;
-    backdrop-filter: blur(10px);
-    border-left: 1px solid #00F0FF;
-    box-shadow: -5px 0 30px rgba(0, 240, 255, 0.1);
-}
-
-:deep(.el-drawer__body) {
-    padding: 0;
 }
 </style>

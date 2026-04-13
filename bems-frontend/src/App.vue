@@ -1,155 +1,343 @@
 <template>
-  <div class="app-wrapper">
-    <div class="top-nav-bar">
-      <div class="logo">
-        <el-icon :size="24" color="#00F0FF">
+  <div class="app-container">
+    <div class="bg-decoration">
+      <div class="glow-circle top-left"></div>
+      <div class="glow-circle bottom-right"></div>
+      <div class="grid-overlay"></div>
+    </div>
+
+    <aside class="sidebar-wrapper" :class="{ 'collapsed': isCollapsed }">
+      <div class="sidebar-logo">
+        <el-icon :size="28" color="#00F0FF">
           <Odometer />
         </el-icon>
-        <span class="logo-text">BEMS 智能运营中枢</span>
+        <span v-show="!isCollapsed" class="logo-text">BEMS 运营中枢</span>
       </div>
 
-      <el-menu :default-active="activeIndex" class="bems-menu" mode="horizontal" router background-color="transparent"
-        text-color="#a0a2b8" active-text-color="#00F0FF">
+      <el-menu :default-active="activeIndex" class="side-menu" router :collapse="isCollapsed"
+        background-color="transparent" text-color="#a0a2b8" active-text-color="#00F0FF">
         <el-menu-item index="/dashboard">
           <el-icon>
             <DataLine />
-          </el-icon>能效态势大屏
+          </el-icon>
+          <template #title>能效态势大屏</template>
         </el-menu-item>
+
         <el-menu-item index="/query">
           <el-icon>
             <Search />
-          </el-icon>数据中心与报表
+          </el-icon>
+          <template #title>数据中心与报表</template>
         </el-menu-item>
 
-        <div class="ai-trigger-wrapper">
-          <el-button class="cyber-ai-btn pulse-glow" @click="triggerAi">
-            <el-icon>
-              <Cpu />
-            </el-icon> BEMS Copilot
-          </el-button>
-        </div>
-      </el-menu>
-    </div>
+        <el-menu-item index="/diagnosis">
+          <el-icon>
+            <Cpu />
+          </el-icon>
+          <template #title>智能诊断中心</template>
+        </el-menu-item>
 
-    <div class="main-content">
-      <router-view v-slot="{ Component }">
-        <transition name="fade" mode="out-in">
-          <component :is="Component" />
-        </transition>
-      </router-view>
-    </div>
+        <el-menu-item index="/knowledge">
+          <el-icon>
+            <Collection />
+          </el-icon>
+          <template #title>运维知识库</template>
+        </el-menu-item>
+      </el-menu>
+
+      <div class="collapse-trigger" @click="isCollapsed = !isCollapsed">
+        <el-icon v-if="isCollapsed">
+          <Expand />
+        </el-icon>
+        <el-icon v-else>
+          <Fold />
+        </el-icon>
+      </div>
+    </aside>
+
+    <main class="main-container">
+      <header class="top-header">
+        <div class="header-left">
+          <span class="breadcrumb-current">{{ currentPathName }}</span>
+        </div>
+
+        <div class="header-right">
+          <div class="system-time">
+            <el-icon>
+              <Timer />
+            </el-icon>
+            <span>{{ currentTime }}</span>
+          </div>
+          <el-divider direction="vertical" />
+          <el-avatar :size="32" class="user-avatar">Admin</el-avatar>
+        </div>
+      </header>
+
+      <section class="content-view">
+        <router-view v-slot="{ Component }">
+          <transition name="page-fade" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
+      </section>
+    </main>
 
     <GlobalAiAssistant ref="aiAssistantRef" />
   </div>
 </template>
 
 <script setup>
-import { computed, ref, provide } from 'vue' // 新增 provide
+import { ref, computed, onMounted, provide } from 'vue'
 import { useRoute } from 'vue-router'
-import { DataLine, Search, Cpu, Odometer } from '@element-plus/icons-vue'
+import {
+  DataLine, Search, Cpu, Odometer,
+  Collection, Timer, Fold, Expand
+} from '@element-plus/icons-vue'
 import GlobalAiAssistant from './components/GlobalAiAssistant.vue'
 
 const route = useRoute()
+const isCollapsed = ref(false)
+const aiAssistantRef = ref(null)
+const currentTime = ref('')
+
+// 动态路由名称
+const currentPathName = computed(() => {
+  const map = {
+    '/dashboard': '能效态势看板 // Energy Dashboard',
+    '/query': '数据中心与智能报表 // Data Center',
+    '/diagnosis': '故障诊断中心 // AI Diagnosis',
+    '/knowledge': '运维标准知识库 // Knowledge Base'
+  }
+  return map[route.path] || '系统主页'
+})
+
 const activeIndex = computed(() => route.path)
 
-const aiAssistantRef = ref(null)
-
-// 普通唤醒
-const triggerAi = () => {
-  if (aiAssistantRef.value) aiAssistantRef.value.openAssistant()
+// 更新系统时间逻辑
+const updateTime = () => {
+  const now = new Date()
+  currentTime.value = now.toLocaleString()
 }
 
-// 带参唤醒 (供底层子页面调用)
+onMounted(() => {
+  updateTime()
+  setInterval(updateTime, 1000)
+})
+
+// 全局 AI 调用接口
 const triggerAiWithContext = (promptText) => {
   if (aiAssistantRef.value) aiAssistantRef.value.openAssistant(promptText)
 }
-
-// 💡 注册全局通信频道，任何页面都可以一键呼叫 AI
 provide('callBemsAi', triggerAiWithContext)
 </script>
 
 <style>
-/* --- 全局样式重置 --- */
+/* --- 全局样式与变量 --- */
+:root {
+  --bg-dark: #05050f;
+  --panel-bg: rgba(11, 9, 26, 0.6);
+  --accent-cyan: #00F0FF;
+  --accent-green: #00FF9D;
+  --border-color: #2A2946;
+}
+
 body,
 html {
   margin: 0;
   padding: 0;
-  background-color: #05050f;
-  /* 极度深邃的暗黑底色 */
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  color: #ffffff;
-}
-
-.app-wrapper {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
+  background-color: var(--bg-dark);
+  color: #fff;
+  font-family: 'Inter', 'PingFang SC', sans-serif;
   overflow: hidden;
 }
 
-/* --- 导航栏样式定制 (强制单行) --- */
-.top-nav-bar {
+.app-container {
   display: flex;
-  flex-direction: row;
-  /* 强制横向排列 */
-  align-items: center;
-  /* 垂直居中 */
-  justify-content: space-between;
-  /* 两端对齐：Logo在左，菜单在右 */
-  height: 60px;
-  /* 锁死高度 */
-  background-color: #0b091a;
-  border-bottom: 1px solid #1f1d36;
-  padding: 0 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-  box-sizing: border-box;
+  width: 100vw;
+  height: 100vh;
+  position: relative;
 }
 
-.logo {
+/* --- 背景装饰 --- */
+.bg-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.glow-circle {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.15;
+}
+
+.top-left {
+  top: -100px;
+  left: -100px;
+  background: var(--accent-cyan);
+}
+
+.bottom-right {
+  bottom: -100px;
+  right: -100px;
+  background: var(--accent-green);
+}
+
+.grid-overlay {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* --- 侧边栏样式 --- */
+.sidebar-wrapper {
+  width: 240px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(15px);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 10;
+}
+
+.sidebar-wrapper.collapsed {
+  width: 64px;
+}
+
+.sidebar-logo {
+  height: 64px;
   display: flex;
   align-items: center;
-  white-space: nowrap;
-  /* 强制 Logo 文字不换行 */
+  padding: 0 18px;
+  gap: 12px;
+  overflow: hidden;
 }
 
 .logo-text {
-  font-size: 20px;
-  font-weight: bold;
-  color: #ffffff;
-  margin-left: 10px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--accent-cyan);
+  white-space: nowrap;
   letter-spacing: 1px;
 }
 
-/* 清除 Element Plus 菜单自带的底边框，使其融入容器 */
-.bems-menu {
+.side-menu {
+  border-right: none !important;
   flex: 1;
-  justify-content: flex-end;
-  /* 菜单项靠右 */
-  border-bottom: none !important;
-  height: 60px;
 }
 
+/* 深度定制 Element Menu 极客风 */
 .el-menu-item {
-  font-size: 16px;
-  height: 60px !important;
-  line-height: 60px !important;
+  height: 56px !important;
+  margin: 4px 10px;
+  border-radius: 8px;
+  transition: all 0.3s;
 }
 
-/* --- 内容区与动画 --- */
-.main-content {
+.el-menu-item:hover {
+  background: rgba(0, 240, 255, 0.1) !important;
+  color: var(--accent-cyan) !important;
+}
+
+.el-menu-item.is-active {
+  background: rgba(0, 240, 255, 0.15) !important;
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.1);
+}
+
+.collapse-trigger {
+  height: 48px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  border-top: 1px solid var(--border-color);
+  color: #a0a2b8;
+}
+
+.collapse-trigger:hover {
+  color: var(--accent-cyan);
+}
+
+/* --- 右侧内容区 --- */
+.main-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.top-header {
+  height: 64px;
+  padding: 0 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(5, 5, 15, 0.4);
+  backdrop-filter: blur(5px);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.breadcrumb-current {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: bold;
+  font-size: 16px;
+  color: #e0e2f5;
+  letter-spacing: 1px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 14px;
+  color: #a0a2b8;
+}
+
+.system-time {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-avatar {
+  background: linear-gradient(135deg, var(--accent-cyan), #0088ff);
+  font-weight: bold;
+  color: #000;
+  cursor: pointer;
+}
+
+.content-view {
   flex: 1;
   overflow: auto;
-  padding: 20px;
+  padding: 24px;
   box-sizing: border-box;
 }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
+/* 页面切换动画 */
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: all 0.3s ease;
 }
 
-.fade-enter-from,
-.fade-leave-to {
+.page-fade-enter-from {
   opacity: 0;
+  transform: translateX(15px);
+}
+
+.page-fade-leave-to {
+  opacity: 0;
+  transform: translateX(-15px);
 }
 </style>
