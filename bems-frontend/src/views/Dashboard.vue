@@ -222,6 +222,85 @@ const adjustDate = (direction) => {
   fetchDataAndRender()
 }
 
+// 💡 1. BEMS 虚拟分项计量测算引擎 (Virtual Sub-metering Engine)
+const calculateSubEnergy = (totalElec, totalWater, type) => {
+  // 根据真实冷量反推空调耗电 (假设系统综合 COP 为 3.8)
+  let hvacElec = totalWater / 3.8;
+  if (hvacElec > totalElec * 0.6) hvacElec = totalElec * 0.6; // 安全兜底
+  if (hvacElec <= 0 || isNaN(hvacElec)) hvacElec = totalElec * 0.4;
+
+  const remainElec = totalElec - hvacElec;
+
+  // 根据业态动态拆解并赋予 UI 颜色
+  if (type === 'education') {
+    return [
+      { name: '空调系统', value: Math.round(hvacElec), itemStyle: { color: 'rgba(0, 240, 255, 0.8)' } },
+      { name: '照明插座', value: Math.round(remainElec * 0.65), itemStyle: { color: 'rgba(0, 240, 255, 0.5)' } },
+      { name: '动力设备', value: Math.round(remainElec * 0.35), itemStyle: { color: 'rgba(0, 240, 255, 0.3)' } }
+    ];
+  } else if (type === 'office') {
+    return [
+      { name: '空调系统', value: Math.round(hvacElec), itemStyle: { color: 'rgba(115, 89, 255, 0.8)' } },
+      { name: '照明插座', value: Math.round(remainElec * 0.55), itemStyle: { color: 'rgba(115, 89, 255, 0.5)' } },
+      { name: '数据机房', value: Math.round(remainElec * 0.20), itemStyle: { color: 'rgba(115, 89, 255, 0.3)' } },
+      { name: '动力设备', value: Math.round(remainElec * 0.25), itemStyle: { color: 'rgba(115, 89, 255, 0.3)' } }
+    ];
+  } else if (type === 'service') {
+    return [
+      { name: '动力水泵', value: Math.round(hvacElec * 0.8), itemStyle: { color: 'rgba(0, 255, 157, 0.8)' } },
+      { name: '公共照明', value: Math.round(remainElec * 0.70), itemStyle: { color: 'rgba(0, 255, 157, 0.5)' } },
+      { name: '其他用电', value: Math.round(remainElec * 0.30), itemStyle: { color: 'rgba(0, 255, 157, 0.3)' } }
+    ];
+  } else {
+    // 宿舍类 dorm
+    return [
+      { name: '空调制热', value: Math.round(hvacElec), itemStyle: { color: 'rgba(255, 184, 0, 0.8)' } },
+      { name: '生活热水', value: Math.round(remainElec * 0.60), itemStyle: { color: 'rgba(255, 184, 0, 0.5)' } },
+      { name: '独立电表', value: Math.round(remainElec * 0.40), itemStyle: { color: 'rgba(255, 184, 0, 0.3)' } }
+    ];
+  }
+}
+
+// 💡 2. 动态更新旭日图
+const updateSunburstChart = (baseElec, baseWater) => {
+  if (!pieChart) pieChart = echarts.init(pieChartRef.value)
+
+  const parkElec = baseElec * 4.5;
+  const parkWater = baseWater * 4.5;
+  const colors = { education: '#00F0FF', office: '#7359FF', service: '#00FF9D', dorm: '#FFB800' }
+
+  pieChart.setOption({
+    series: [{
+      type: 'sunburst',
+      // 🎯 核心修复：这里也必须设置相同的 levels 比例，防止数据刷新时变回实心
+      levels: [
+        {},
+        { r0: '30%', r: '60%' },
+        { r0: '61%', r: '80%' }
+      ],
+      data: [
+        {
+          name: '教育类', itemStyle: { color: colors.education },
+          children: calculateSubEnergy(parkElec * 0.35, parkWater * 0.35, 'education')
+        },
+        {
+          name: '办公类', itemStyle: { color: colors.office },
+          children: calculateSubEnergy(parkElec * 0.30, parkWater * 0.30, 'office')
+        },
+        {
+          name: '公共服务', itemStyle: { color: colors.service },
+          children: calculateSubEnergy(parkElec * 0.20, parkWater * 0.20, 'service')
+        },
+        {
+          name: '宿舍类', itemStyle: { color: colors.dorm },
+          children: calculateSubEnergy(parkElec * 0.15, parkWater * 0.15, 'dorm')
+        }
+      ]
+    }]
+  })
+}
+
+
 const disabledDate = (time) => {
   if (!time) return true
   const dateStr = new Date(time.getTime() - (time.getTimezoneOffset() * 60000)).toISOString().split('T')[0]
@@ -393,30 +472,107 @@ const fetchDataAndRender = async () => {
     // 联动刷新下方雷达图（虚实结合：根据真实综合COP按经验比例测算子系统COP）
     updateRadarChart(parseFloat(kpiData[2].value))
 
+    // 🚀 新增：联动刷新旭日图（将刚才统计好的真实总电量传给算法引擎）
+    updateSunburstChart(totalElec, totalWater)
+
   } catch (error) {
     console.error('渲染数据失败', error)
   }
 }
 
-// --- 静态饼图 (保留原版) ---
+// --- 融合升级：业态与分项能效双层旭日图 (Sunburst) ---
 const initPieChart = () => {
   if (!pieChart) pieChart = echarts.init(pieChartRef.value)
+
+  // 赛博朋克主题色盘
+  const colors = {
+    education: '#00F0FF', // 教育类（青色）
+    office: '#7359FF',    // 办公类（紫色）
+    service: '#00FF9D',   // 公共服务（荧光绿）
+    dorm: '#FFB800'       // 宿舍类（橙黄）
+  }
+
   pieChart.setOption({
-    tooltip: { trigger: 'item', backgroundColor: 'rgba(11, 9, 26, 0.8)', textStyle: { color: '#fff' }, borderColor: '#2A2946' },
-    legend: { bottom: '0%', textStyle: { color: '#a0a2b8' } },
-    series: [{
-      name: '能耗占比', type: 'pie', radius: ['40%', '70%'], avoidLabelOverlap: false,
-      itemStyle: { borderRadius: 10, borderColor: '#0b091a', borderWidth: 2 },
-      label: { show: false, position: 'center' },
-      emphasis: { label: { show: true, fontSize: 16, fontWeight: 'bold', color: '#fff' } },
-      labelLine: { show: false },
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: 'rgba(11, 9, 26, 0.85)',
+      textStyle: { color: '#fff' },
+      borderColor: '#2A2946',
+      // 👇 使用回调函数代替字符串模板
+      formatter: (params) => {
+        // 获取当前系列的所有顶层数据，计算总和
+        const seriesData = pieChart.getOption().series[0].data;
+        const total = seriesData.reduce((sum, item) => {
+          // 旭日图的顶层节点如果没有显式 value，其值为子节点之和
+          const itemVal = item.value || (item.children ? item.children.reduce((s, c) => s + c.value, 0) : 0);
+          return sum + itemVal;
+        }, 0);
+
+        const percent = total > 0 ? ((params.value / total) * 100).toFixed(1) : 0;
+        return `<div style="color:${params.color};font-weight:bold;">${params.name}</div>
+                <div style="margin-top:4px;">能耗读数: ${params.value} kWh</div>
+                <div>全园占比: ${percent}%</div>`;
+      }
+    },
+    series: {
+      type: 'sunburst',
+      radius: ['15%', '85%'], // 留出一点中心空隙，外圈尽量撑满
+      center: ['50%', '50%'],
+      itemStyle: {
+        borderRadius: 4,
+        borderColor: '#0b091a', // 契合背景的暗色边框
+        borderWidth: 2
+      },
+      // 每一层的文字标签样式设置
+      levels: [
+        {}, // 留空，代表圆心点
+        { // 内圈：建筑业态 (加粗，字大一点)
+          label: { position: 'inner', fontWeight: 'bold', fontSize: 13, color: '#000' }
+        },
+        { // 外圈：能耗分项拆解 (细体，环绕)
+          label: { position: 'outside', padding: 3, silent: false, color: '#a0a2b8', fontSize: 11 }
+        }
+      ],
+      // 🚀 核心融合数据：内层是业态，外层是分项
       data: [
-        { value: 1048, name: '教育类', itemStyle: { color: '#00F0FF' } },
-        { value: 735, name: '办公类', itemStyle: { color: '#7359FF' } },
-        { value: 580, name: '公共服务', itemStyle: { color: '#00FF9D' } },
-        { value: 300, name: '宿舍类', itemStyle: { color: '#FFB800' } }
+        {
+          name: '教育类',
+          itemStyle: { color: colors.education },
+          children: [
+            { name: '空调系统', value: 650, itemStyle: { color: 'rgba(0, 240, 255, 0.8)' } },
+            { name: '照明插座', value: 250, itemStyle: { color: 'rgba(0, 240, 255, 0.5)' } },
+            { name: '动力设备', value: 148, itemStyle: { color: 'rgba(0, 240, 255, 0.3)' } }
+          ]
+        },
+        {
+          name: '办公类',
+          itemStyle: { color: colors.office },
+          children: [
+            { name: '空调系统', value: 400, itemStyle: { color: 'rgba(115, 89, 255, 0.8)' } },
+            { name: '照明插座', value: 200, itemStyle: { color: 'rgba(115, 89, 255, 0.5)' } },
+            { name: '数据机房', value: 135, itemStyle: { color: 'rgba(115, 89, 255, 0.3)' } }
+          ]
+        },
+        {
+          name: '公共服务',
+          itemStyle: { color: colors.service },
+          children: [
+            { name: '动力水泵', value: 350, itemStyle: { color: 'rgba(0, 255, 157, 0.8)' } }, // 呼应你的水泵异常告警
+            { name: '公共照明', value: 150, itemStyle: { color: 'rgba(0, 255, 157, 0.5)' } },
+            { name: '其他', value: 80, itemStyle: { color: 'rgba(0, 255, 157, 0.3)' } }
+          ]
+        },
+        {
+          name: '宿舍类',
+          itemStyle: { color: colors.dorm },
+          children: [
+            { name: '空调制热', value: 180, itemStyle: { color: 'rgba(255, 184, 0, 0.8)' } },
+            { name: '生活热水', value: 90, itemStyle: { color: 'rgba(255, 184, 0, 0.5)' } },
+            { name: '独立电表', value: 30, itemStyle: { color: 'rgba(255, 184, 0, 0.3)' } }
+          ]
+        }
       ]
-    }]
+    }
   })
 }
 
@@ -468,16 +624,27 @@ const updateRadarChart = (baseCop) => {
   })
 }
 
+// 1. 定义统一的缩放处理函数
+const handleResize = () => {
+  lineChart?.resize()
+  pieChart?.resize()
+  radarChart?.resize()
+}
+
 onMounted(() => {
   initPieChart()
   fetchCalendarAndRender()
-  window.addEventListener('resize', () => {
-    lineChart?.resize(); pieChart?.resize(); radarChart?.resize()
-  })
+  // 2. 绑定统一引用
+  window.addEventListener('resize', handleResize)
 })
+
 onUnmounted(() => {
-  window.removeEventListener('resize', () => { })
-  lineChart?.dispose(); pieChart?.dispose(); radarChart?.dispose()
+  // 3. 正确卸载同一引用
+  window.removeEventListener('resize', handleResize)
+  // 销毁实例释放内存
+  lineChart?.dispose()
+  pieChart?.dispose()
+  radarChart?.dispose()
 })
 </script>
 
@@ -487,7 +654,10 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  height: 100%;
+
+  /* 🎯 新增底部留白，让页面更有呼吸感，不再贴底 */
+  padding-bottom: 40px;
+  box-sizing: border-box;
 }
 
 /* ================= 统一 Bento Box 面板风格 ================= */
@@ -728,10 +898,13 @@ onUnmounted(() => {
 /* ================= 3. 2x2 主体图表网格 ================= */
 .main-grid {
   display: grid;
-  /* 左侧占大头(折线图)，右侧占小头(告警/雷达) */
-  grid-template-columns: 3fr 2fr;
-  grid-template-rows: minmax(320px, auto) minmax(320px, auto);
-  gap: 20px;
+  /* 🎯 优化网格比例：将原本的 3fr 2fr 改为 1.3fr 1fr */
+  /* 这样大幅扩大了右侧告警列表和旭日图的宽度，文字不再拥挤 */
+  grid-template-columns: 1.3fr 1fr;
+  /* 🎯 增加下排的高度，给饼图和雷达图更多上下空间 */
+  grid-template-rows: 400px 350px;
+  gap: 24px;
+  /* 稍微拉开一点卡片之间的间距 */
   flex: 1;
   min-height: 0;
 }
