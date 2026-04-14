@@ -39,10 +39,17 @@
                     <div class="input-area">
                         <el-input v-model="inputMessage" type="textarea" :rows="2" placeholder="输入系统诊断指令，按 Enter 发送..."
                             class="cyber-textarea" @keydown.enter.prevent="sendMessage" :disabled="isTyping" />
-                        <el-button type="primary" class="cyber-btn send-btn pulse-btn" @click="sendMessage"
-                            :loading="isTyping">
+
+                        <el-button v-if="!isTyping" type="primary" class="cyber-btn send-btn pulse-btn"
+                            @click="sendMessage">
                             <el-icon :size="20">
                                 <Position />
+                            </el-icon>
+                        </el-button>
+
+                        <el-button v-else type="danger" class="cyber-btn stop-btn pulse-btn" @click="stopGeneration">
+                            <el-icon :size="20">
+                                <VideoPause />
                             </el-icon>
                         </el-button>
                     </div>
@@ -53,8 +60,9 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
-import { Odometer, Position, Close, Cpu } from '@element-plus/icons-vue'
+// 修复了原来代码中重复 import 的问题，并引入了 VideoPause 图标
+import { ref, nextTick, watch, onUnmounted } from 'vue'
+import { Odometer, Position, Close, Cpu, VideoPause } from '@element-plus/icons-vue'
 import { marked } from 'marked'
 
 const visible = ref(false)
@@ -62,15 +70,41 @@ const inputMessage = ref('')
 const isTyping = ref(false)
 const chatHistoryRef = ref(null)
 
+// --- 新增：存储当前的 EventSource 实例 ---
+const activeEventSource = ref(null)
+
+// --- 新增：主动停止生成的方法 ---
+const stopGeneration = () => {
+    if (activeEventSource.value) {
+        activeEventSource.value.close() // 强制关闭连接
+        activeEventSource.value = null
+        isTyping.value = false
+
+        // 在聊天记录里追加一个中止提示
+        const lastMsgIndex = chatList.value.length - 1
+        if (chatList.value[lastMsgIndex].role === 'ai') {
+            chatList.value[lastMsgIndex].content += '\n\n*(已手动中止生成)*'
+        }
+        scrollToBottom()
+    }
+}
+
+// --- 新增：监听面板关闭事件，关闭时强制停止生成 ---
+watch(visible, (newVal) => {
+    if (!newVal) {
+        stopGeneration()
+    }
+})
+
 // --- 悬浮球拖拽专用逻辑 ---
 const floatingBtnRef = ref(null);
-let isDraggingBtn = false; // 用于区分是“拖拽”还是“点击”
+let isDraggingBtn = false;
 
 const handleBtnMouseDown = (e) => {
     const el = floatingBtnRef.value;
     if (!el) return;
 
-    isDraggingBtn = false; // 按下时重置拖拽标记
+    isDraggingBtn = false;
     const startX = e.clientX;
     const startY = e.clientY;
 
@@ -78,21 +112,18 @@ const handleBtnMouseDown = (e) => {
     const offsetX = e.clientX - rect.left;
     const offsetY = e.clientY - rect.top;
 
-    // 冻结当前坐标，接管 CSS 的 right 和 bottom
     el.style.left = rect.left + 'px';
     el.style.top = rect.top + 'px';
     el.style.right = 'auto';
     el.style.bottom = 'auto';
-    el.style.transition = 'none'; // 拖拽时取消 CSS 动画，防止跟手卡顿
+    el.style.transition = 'none';
 
     const handleMouseMove = (moveEvent) => {
         moveEvent.preventDefault();
 
-        // 计算移动距离
         const dx = moveEvent.clientX - startX;
         const dy = moveEvent.clientY - startY;
 
-        // ⚠️ 核心：如果移动距离超过 3 像素，判定为拖拽操作
         if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
             isDraggingBtn = true;
         }
@@ -100,7 +131,6 @@ const handleBtnMouseDown = (e) => {
         let newLeft = moveEvent.clientX - offsetX;
         let newTop = moveEvent.clientY - offsetY;
 
-        // 屏幕边界碰撞检测
         newLeft = Math.max(0, Math.min(window.innerWidth - rect.width, newLeft));
         newTop = Math.max(0, Math.min(window.innerHeight - rect.height, newTop));
 
@@ -109,11 +139,10 @@ const handleBtnMouseDown = (e) => {
     };
 
     const handleMouseUp = () => {
-        el.style.transition = 'all 0.3s ease'; // 恢复原来的 CSS hover 动画
+        el.style.transition = 'all 0.3s ease';
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
 
-        // ⚠️ 核心修复点：在这里判断，如果没有发生拖拽，就视为“点击”，执行打开逻辑
         if (!isDraggingBtn) {
             toggleAssistant();
         }
@@ -125,38 +154,29 @@ const handleBtnMouseDown = (e) => {
 
 
 const chatPanelRef = ref(null);
-const position = ref({ x: 0, y: 0 }); // 记录偏移量
 
 const handleMouseDown = (e) => {
     const el = chatPanelRef.value;
     if (!el) return;
 
-    // 1. 获取面板当前的真实物理位置和尺寸（不受 right/bottom 影响）
     const rect = el.getBoundingClientRect();
-
-    // 2. 计算鼠标点击点距离面板左上角的偏移量
     const offsetX = e.clientX - rect.left;
     const offsetY = e.clientY - rect.top;
 
-    // 3. ⚠️ 关键步骤：冻结当前坐标，彻底解除 CSS 的 right 和 bottom 锁定
     el.style.left = rect.left + 'px';
     el.style.top = rect.top + 'px';
     el.style.right = 'auto';
     el.style.bottom = 'auto';
 
     const handleMouseMove = (moveEvent) => {
-        // 防止选中文字等默认行为导致拖拽卡顿
         moveEvent.preventDefault();
 
-        // 4. 计算移动后的新坐标
         let newLeft = moveEvent.clientX - offsetX;
         let newTop = moveEvent.clientY - offsetY;
 
-        // 5. 屏幕边界碰撞检测（保证悬浮框不会被拖出屏幕外面）
         newLeft = Math.max(0, Math.min(window.innerWidth - rect.width, newLeft));
         newTop = Math.max(0, Math.min(window.innerHeight - rect.height, newTop));
 
-        // 6. 更新位置
         el.style.left = newLeft + 'px';
         el.style.top = newTop + 'px';
     };
@@ -177,13 +197,11 @@ const chatList = ref([
     }
 ])
 
-// 切换面板显示状态
 const toggleAssistant = () => {
     visible.value = !visible.value;
     if (visible.value) scrollToBottom();
 }
 
-// 💡 暴露给全局调用的唤醒方法，支持带参数自动质询
 const openAssistant = (autoPrompt = '') => {
     visible.value = true
     if (autoPrompt) {
@@ -218,8 +236,19 @@ const sendMessage = () => {
     const url = `http://localhost:8080/api/ai/chat/stream?message=${encodeURIComponent(text)}`
     const eventSource = new EventSource(url)
 
+    // ⚠️ 核心：将实例保存下来，以便随时中断
+    activeEventSource.value = eventSource
+
     eventSource.onmessage = (event) => {
         const lastMsgIndex = chatList.value.length - 1
+        // 如果后端传来了结束信号（例如 [DONE]），可以主动关闭
+        if (event.data === '[DONE]') {
+            eventSource.close()
+            activeEventSource.value = null
+            isTyping.value = false
+            return
+        }
+
         const newText = event.data.replace(/\\n/g, '\n')
         chatList.value[lastMsgIndex].content += newText
         scrollToBottom()
@@ -228,15 +257,16 @@ const sendMessage = () => {
     eventSource.onerror = (error) => {
         isTyping.value = false
         eventSource.close()
+        activeEventSource.value = null // 清理实例
 
-        // 🚨 新增：捕获异常并给用户友好的提示
         const lastMsgIndex = chatList.value.length - 1
         if (chatList.value[lastMsgIndex].content === '') {
-            // 如果 AI 一句话都没回就断了
             chatList.value[lastMsgIndex].content = '⚠️ **中枢连接异常**：大模型服务响应超时或知识库上下文超载。请联系系统管理员检查 RAG 参数或 API 状态。'
         } else {
-            // 如果说到一半断了
-            chatList.value[lastMsgIndex].content += '\n\n*(信号中断，停止输出)*'
+            // 如果是因为手动 close 引发的错误（部分浏览器行为），上面已经加上了中止提示，这里可以不做额外处理，或者按需调整
+            if (!chatList.value[lastMsgIndex].content.includes('已手动中止生成')) {
+                chatList.value[lastMsgIndex].content += '\n\n*(信号中断，停止输出)*'
+            }
         }
         scrollToBottom()
     }
@@ -246,15 +276,20 @@ const parseMarkdown = (text) => {
     if (!text) return ''
     return marked.parse(text)
 }
+
+// --- 新增：组件卸载时进行安全清理 ---
+onUnmounted(() => {
+    stopGeneration()
+})
 </script>
 
 <style scoped>
+/* 原有样式保持不变... */
 .ai-copilot-container {
     position: relative;
     z-index: 9999;
 }
 
-/* --- 1. 悬浮唤醒按钮 --- */
 .floating-btn {
     position: fixed;
     right: 40px;
@@ -292,20 +327,15 @@ const parseMarkdown = (text) => {
     }
 }
 
-/* --- 2. 悬浮对话面板 (毛玻璃科技风) --- */
 .floating-chat-panel {
     position: fixed;
     right: 40px;
     bottom: 120px;
-    /* 位于悬浮球上方 */
     width: 420px;
     height: 65vh;
-    /* 动态高度，适配各种屏幕 */
     min-height: 500px;
     background-color: rgba(11, 9, 26, 0.85);
-    /* 半透明极深蓝 */
     backdrop-filter: blur(12px);
-    /* 毛玻璃滤镜 */
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid #2A2946;
     border-radius: 12px;
@@ -315,7 +345,6 @@ const parseMarkdown = (text) => {
     overflow: hidden;
 }
 
-/* 动画效果 */
 .pop-up-enter-active,
 .pop-up-leave-active {
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -328,7 +357,6 @@ const parseMarkdown = (text) => {
     pointer-events: none;
 }
 
-/* --- 内部布局与样式 --- */
 .panel-header {
     padding: 15px 20px;
     background-color: rgba(5, 5, 15, 0.6);
@@ -339,17 +367,12 @@ const parseMarkdown = (text) => {
     display: flex;
     align-items: center;
     justify-content: space-between;
-
     cursor: grab;
-    /* 鼠标移上去变成张开的小手 */
     user-select: none;
-    /* 防止拖拽时意外选中文字变蓝，影响观感 */
 }
 
-/* 拖拽按下时的鼠标样式 */
 .panel-header:active {
     cursor: grabbing;
-    /* 鼠标按下时变成抓取状态 */
 }
 
 .header-left {
@@ -492,7 +515,6 @@ const parseMarkdown = (text) => {
     background-color: transparent;
     border: 1px solid #00F0FF;
     height: 52px;
-    /* 匹配两行 textarea 的高度 */
     width: 52px;
     border-radius: 6px;
     padding: 0;
@@ -510,7 +532,17 @@ const parseMarkdown = (text) => {
     box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
 }
 
-/* Markdown 样式覆盖 */
+/* --- 新增：停止按钮专属样式 --- */
+.stop-btn {
+    border: 1px solid #FF4D4F;
+    color: #FF4D4F;
+}
+
+.stop-btn:hover {
+    background-color: rgba(255, 77, 79, 0.1);
+    box-shadow: 0 0 15px rgba(255, 77, 79, 0.4);
+}
+
 :deep(.markdown-body) {
     color: #E0E2F5;
 }
