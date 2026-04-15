@@ -29,6 +29,9 @@
             <el-checkbox value="electricity">耗电态势</el-checkbox>
             <el-checkbox value="chilledwater">冷负荷态势</el-checkbox>
           </el-checkbox-group>
+
+          <el-switch v-model="enablePrediction" active-text="⚡ 启动 AI 预测推演" class="ai-predict-switch"
+            @change="fetchDataAndRender" style="margin-left: 20px;" />
         </div>
 
         <div class="control-item">
@@ -92,6 +95,10 @@
       <div class="bento-card chart-card line-chart-area">
         <div class="card-header">
           <span class="header-title">📉 综合冷电负荷态势与智能监控</span>
+          <el-tag v-if="enablePrediction" size="small" effect="dark" type="warning"
+            style="background: rgba(115, 89, 255, 0.2); border:1px solid #7359FF; color: #7359FF;">
+            Weka 随机森林在线推理中
+          </el-tag>
         </div>
         <div ref="lineChartRef" class="chart-box"></div>
       </div>
@@ -138,7 +145,8 @@
         <div class="card-header">
           <span class="header-title">🎯 子系统 COP 能效比探测</span>
           <el-tag size="small" effect="dark" type="success" style="background: rgba(0,255,157,0.2); border:none;">GB
-            50736 测算模型</el-tag>
+            50736
+            测算模型</el-tag>
         </div>
         <div ref="radarChartRef" class="chart-box radar-box"></div>
       </div>
@@ -162,6 +170,9 @@ const currentDataDate = ref('加载中...')
 const timeUnit = ref('day')
 const selectedParams = ref(['electricity', 'chilledwater'])
 
+// 🚀 新增：预测开关状态
+const enablePrediction = ref(false)
+
 const prevText = computed(() => timeUnit.value === 'day' ? '前一天' : timeUnit.value === 'week' ? '前一周' : '前一月')
 const nextText = computed(() => timeUnit.value === 'day' ? '后一天' : timeUnit.value === 'week' ? '后一周' : '后一月')
 
@@ -175,7 +186,6 @@ let lineChart = null
 let pieChart = null
 let radarChart = null
 
-// 🚀 优化 1：极速 Tooltip 缓存（缓存的是推演后的全园总耗电量）
 let projectedParkElecCache = 1;
 
 const kpiData = reactive([
@@ -214,26 +224,15 @@ const mockAlarmPool = [
 
 const generateLiveAlarm = () => {
   const randomAlarm = mockAlarmPool[Math.floor(Math.random() * mockAlarmPool.length)];
-  const newAlarm = {
-    id: 'live_' + Date.now(),
-    level: randomAlarm.level,
-    time: '刚刚',
-    device: randomAlarm.device,
-    description: randomAlarm.desc
-  };
+  const newAlarm = { id: 'live_' + Date.now(), level: randomAlarm.level, time: '刚刚', device: randomAlarm.device, description: randomAlarm.desc };
   alarmList.value.unshift(newAlarm);
-  if (alarmList.value.length > 15) {
-    alarmList.value.pop();
-  }
+  if (alarmList.value.length > 15) alarmList.value.pop();
 };
 
 const handleDiagnose = (alarm) => {
   const promptText = `系统监测到异常：【${alarm.device}】${alarm.description}请结合内置设备运维手册和暖通规范，帮我分析可能导致该故障的3个主要原因，并给出排查步骤。`
-  if (callBemsAi) {
-    callBemsAi(promptText)
-  } else {
-    ElMessage.warning('未找到 AI 唤醒接口，请确保 App.vue 中已注入 callBemsAi')
-  }
+  if (callBemsAi) callBemsAi(promptText)
+  else ElMessage.warning('未找到 AI 唤醒接口，请确保 App.vue 中已注入 callBemsAi')
 }
 
 const adjustDate = (direction) => {
@@ -250,7 +249,6 @@ const adjustDate = (direction) => {
   fetchDataAndRender()
 }
 
-// 💡 路线 B：保留并优化原有的虚拟分项测算引擎（全园维度拆解）
 const calculateSubEnergy = (totalElec, totalWater, type) => {
   let hvacElec = totalWater / 3.8;
   if (hvacElec > totalElec * 0.6) hvacElec = totalElec * 0.6;
@@ -286,17 +284,11 @@ const calculateSubEnergy = (totalElec, totalWater, type) => {
   }
 }
 
-// 🚀 优化 2：纯粹的样式空壳，不含静态假数据
 const initPieChart = () => {
   if (!pieChart) pieChart = echarts.init(pieChartRef.value)
-
   pieChart.setOption({
     tooltip: {
-      trigger: 'item',
-      backgroundColor: 'rgba(11, 9, 26, 0.85)',
-      textStyle: { color: '#fff' },
-      borderColor: '#2A2946',
-      // 🚀 优化 3：O(1) 高性能 Tooltip
+      trigger: 'item', backgroundColor: 'rgba(11, 9, 26, 0.85)', textStyle: { color: '#fff' }, borderColor: '#2A2946',
       formatter: (params) => {
         const total = projectedParkElecCache > 0 ? projectedParkElecCache : 1;
         const percent = ((params.value / total) * 100).toFixed(1);
@@ -306,30 +298,16 @@ const initPieChart = () => {
       }
     },
     series: {
-      type: 'sunburst',
-      // 🚀 优化 4：缩小半径，防止文字被切割
-      radius: ['20%', '70%'],
-      center: ['50%', '50%'],
-      itemStyle: {
-        borderRadius: 4,
-        borderColor: '#0b091a',
-        borderWidth: 2
-      },
-      levels: [
-        {},
-        { label: { position: 'inner', fontWeight: 'bold', fontSize: 13, color: '#000' } },
-        { label: { position: 'outside', padding: 3, silent: false, color: '#a0a2b8', fontSize: 11 } }
-      ],
-      data: [] // 留空，避免二次渲染冲突
+      type: 'sunburst', radius: ['20%', '70%'], center: ['50%', '50%'],
+      itemStyle: { borderRadius: 4, borderColor: '#0b091a', borderWidth: 2 },
+      levels: [{}, { label: { position: 'inner', fontWeight: 'bold', fontSize: 13, color: '#000' } }, { label: { position: 'outside', padding: 3, silent: false, color: '#a0a2b8', fontSize: 11 } }],
+      data: []
     }
   })
 }
 
-// 🚀 优化 5：AI 算法拓扑渲染引擎 (动态注入推演数据)
 const updateSunburstChart = (baseElec, baseWater) => {
   if (!pieChart) pieChart = echarts.init(pieChartRef.value)
-
-  // 路线 B 核心：乘以系数推算园区全集，并存入极速缓存
   const parkElec = baseElec * 4.5;
   const parkWater = baseWater * 4.5;
   projectedParkElecCache = parkElec;
@@ -338,26 +316,12 @@ const updateSunburstChart = (baseElec, baseWater) => {
 
   pieChart.setOption({
     series: [{
-      animationType: 'scale',
-      animationDuration: 1500,
-      animationEasing: 'cubicOut',
+      animationType: 'scale', animationDuration: 1500, animationEasing: 'cubicOut',
       data: [
-        {
-          name: '教育类', itemStyle: { color: colors.education },
-          children: calculateSubEnergy(parkElec * 0.35, parkWater * 0.35, 'education')
-        },
-        {
-          name: '办公类', itemStyle: { color: colors.office },
-          children: calculateSubEnergy(parkElec * 0.30, parkWater * 0.30, 'office')
-        },
-        {
-          name: '公共服务', itemStyle: { color: colors.service },
-          children: calculateSubEnergy(parkElec * 0.20, parkWater * 0.20, 'service')
-        },
-        {
-          name: '宿舍类', itemStyle: { color: colors.dorm },
-          children: calculateSubEnergy(parkElec * 0.15, parkWater * 0.15, 'dorm')
-        }
+        { name: '教育类', itemStyle: { color: colors.education }, children: calculateSubEnergy(parkElec * 0.35, parkWater * 0.35, 'education') },
+        { name: '办公类', itemStyle: { color: colors.office }, children: calculateSubEnergy(parkElec * 0.30, parkWater * 0.30, 'office') },
+        { name: '公共服务', itemStyle: { color: colors.service }, children: calculateSubEnergy(parkElec * 0.20, parkWater * 0.20, 'service') },
+        { name: '宿舍类', itemStyle: { color: colors.dorm }, children: calculateSubEnergy(parkElec * 0.15, parkWater * 0.15, 'dorm') }
       ]
     }]
   })
@@ -410,6 +374,7 @@ const fetchCalendarAndRender = async () => {
   }
 }
 
+// 🚀 核心预测获取与渲染逻辑重构
 const fetchDataAndRender = async () => {
   try {
     if (selectedParams.value.length === 0) {
@@ -418,6 +383,7 @@ const fetchDataAndRender = async () => {
       return
     }
 
+    // 1. 获取历史真实数据
     const url = `http://localhost:8080/api/energy/chart?buildingId=${currentBuilding.value}&targetDate=${selectedDate.value}&timeUnit=${timeUnit.value}&parameters=${selectedParams.value.join(',')}`
     const res = await axios.get(url)
     const records = res.data
@@ -433,14 +399,31 @@ const fetchDataAndRender = async () => {
     else currentDataDate.value = `${selectedDate.value} 起 (连续30天)`
 
     let totalElec = 0; let totalWater = 0; let abnormalCount = 0;
-    const xData = []; const elecData = []; const waterData = []; const abnormalPoints = [];
 
+    // 基础轴数据
+    const xData = [];
+    const elecData = [];
+    const waterData = [];
+    const abnormalPoints = [];
+
+    // 预测用数据通道
+    const predElecData = [];
+    const lowerBoundData = [];
+    const upperBoundDiffData = []; // 用于 ECharts Stack 叠加
+
+    // 填充历史数据
     records.forEach((item, index) => {
       totalElec += (item.electricity || 0)
       totalWater += (item.chilledwater || 0)
+
       xData.push(item.timeLabel)
       elecData.push(item.electricity || 0)
       waterData.push(item.chilledwater || 0)
+
+      // 为了在图表中留出未来空间，同步给预测数组补空位
+      predElecData.push(null)
+      lowerBoundData.push(null)
+      upperBoundDiffData.push(null)
 
       if (item.status && item.status !== 'normal') {
         abnormalCount++
@@ -449,15 +432,48 @@ const fetchDataAndRender = async () => {
           name: '异常', coord: [index, item.electricity || 0], value: isCritical ? '严重' : '告警',
           itemStyle: { color: isCritical ? '#FF4D4F' : '#FAAD14' },
           customData: {
-            time: item.timeLabel,
-            val: item.electricity,
-            level: isCritical ? '严重能耗突变' : '轻度能耗告警',
-            building: currentBuilding.value,
-            date: selectedDate.value
+            time: item.timeLabel, val: item.electricity, level: isCritical ? '严重能耗突变' : '轻度能耗告警',
+            building: currentBuilding.value, date: selectedDate.value
           }
         })
       }
     })
+
+    // 2. 如果开启预测，调用后端 Weka 服务
+    if (enablePrediction.value && timeUnit.value === 'day') {
+      try {
+        const predRes = await axios.get(`http://localhost:8080/api/energy/predict?buildingId=${currentBuilding.value}&targetDate=${selectedDate.value}`);
+        const predRecords = predRes.data;
+
+        // 🌟 魔法步骤：缝合历史与未来，避免图表断线
+        if (elecData.length > 0 && predRecords.length > 0) {
+          const lastRealValue = elecData[elecData.length - 1];
+          predElecData[predElecData.length - 1] = lastRealValue;
+          lowerBoundData[lowerBoundData.length - 1] = lastRealValue;
+          upperBoundDiffData[upperBoundDiffData.length - 1] = 0; // 上下限在此处重合
+        }
+
+        // 追加未来 24 小时的数据
+        predRecords.forEach(item => {
+          xData.push(item.timeLabel);
+          elecData.push(null); // 历史线停止生长
+          waterData.push(null);
+
+          predElecData.push(parseFloat(item.predictedElec));
+
+          const lower = parseFloat(item.lowerBound);
+          const upper = parseFloat(item.upperBound);
+          lowerBoundData.push(lower);
+
+          // ECharts 画置信区间的核心算法：上线 = 差值堆叠在下线上
+          upperBoundDiffData.push(upper - lower);
+        });
+
+      } catch (err) {
+        console.error("AI 预测获取失败", err);
+        ElMessage.warning('Weka 模型拉取失败，请检查后端运行状态');
+      }
+    }
 
     kpiData[0].value = totalElec.toFixed(1)
     kpiData[1].value = totalWater.toFixed(1)
@@ -466,16 +482,11 @@ const fetchDataAndRender = async () => {
 
     if (!lineChart) {
       lineChart = echarts.init(lineChartRef.value)
-
       lineChart.on('click', (params) => {
         if (params.componentType === 'markPoint' && params.data.customData) {
           const pd = params.data.customData;
-
-          const promptText = `【BEMS 智能诊断请求】\n目标节点：${pd.building}\n发生日期：${pd.date}\n异常时段：${pd.time}\n异常现象：系统判定为【${pd.level}】，该时段总电耗达 ${pd.val} kWh。\n\n请作为高级暖通与建筑能源专家，结合 RAG 知识库（特别是《BEMS 专家运维排障手册》及国家节能规范），执行以下任务：\n1. 结合该建筑的业态类型和日期所在季节，分析导致此能耗突变的 3 个最可能原因。\n2. 给出针对性的现场排查步骤。\n（⚠️ 约束条件：请直奔主题，分点作答，总字数严格控制在 300 字以内，无需重复系统提示词）`;
-
-          if (callBemsAi) {
-            callBemsAi(promptText);
-          }
+          const promptText = `【BEMS 智能诊断请求】\n目标节点：${pd.building}\n发生日期：${pd.date}\n异常时段：${pd.time}\n异常现象：系统判定为【${pd.level}】，该时段总电耗达 ${pd.val} kWh。\n\n请作为高级暖通与建筑能源专家，结合 RAG 知识库，分析导致此能耗突变的 3 个最可能原因并给出针对性排查步骤。（⚠️ 约束条件：请直奔主题，分点作答，300字以内）`;
+          if (callBemsAi) callBemsAi(promptText);
         }
       });
     }
@@ -485,35 +496,81 @@ const fetchDataAndRender = async () => {
     const seriesConfig = []
 
     if (selectedParams.value.includes('electricity')) {
-      legendData.push('耗电量 (kWh)')
+      legendData.push('耗电量 (实测)')
+      if (enablePrediction.value) legendData.push('耗电量 (AI预测)', '置信区间')
+
       yAxisConfig.push({
         type: 'value', name: '电耗', position: 'left', nameTextStyle: { color: '#00F0FF' },
         splitLine: { lineStyle: { color: '#1f1d36', type: 'dashed' } }, axisLabel: { color: '#00F0FF' }
       })
+
+      // 实体线：历史数据
       seriesConfig.push({
-        name: '耗电量 (kWh)', type: 'line', yAxisIndex: yAxisConfig.length - 1, smooth: true, data: elecData,
+        name: '耗电量 (实测)', type: 'line', yAxisIndex: yAxisConfig.length - 1, smooth: true, data: elecData,
         lineStyle: { color: '#00F0FF', width: 3 },
         areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(0,240,255,0.4)' }, { offset: 1, color: 'rgba(0,240,255,0)' }]) },
         markPoint: { symbol: 'pin', symbolSize: 50, label: { color: '#fff', fontSize: 10 }, data: abnormalPoints },
-        animationDelay: (idx) => idx * 30,
-        animationDuration: 2000,
-        animationEasing: 'cubicOut'
+        // 如果开了预测，画一根垂直分割线
+        markLine: enablePrediction.value ? {
+          silent: true,
+          data: [{ xAxis: xData[records.length - 1], label: { formatter: '现在', color: '#7359FF' } }],
+          lineStyle: { color: '#7359FF', type: 'dashed', width: 2 }
+        } : null,
+        animationDuration: 1500
       })
+
+      // 虚线与阴影：AI预测数据
+      if (enablePrediction.value) {
+        seriesConfig.push({
+          name: '耗电量 (AI预测)', type: 'line', yAxisIndex: yAxisConfig.length - 1, smooth: true, data: predElecData,
+          lineStyle: { color: '#7359FF', width: 3, type: 'dashed' },
+          symbol: 'none'
+        });
+
+        // 置信区间下限 (透明作为底部支撑)
+        seriesConfig.push({
+          name: '置信区间支撑', type: 'line', yAxisIndex: yAxisConfig.length - 1, smooth: true, data: lowerBoundData,
+          lineStyle: { opacity: 0 }, stack: 'confidence-band', symbol: 'none'
+        });
+
+        // 置信区间上限 (实际渲染的紫红色阴影面积)
+        seriesConfig.push({
+          name: '置信区间', type: 'line', yAxisIndex: yAxisConfig.length - 1, smooth: true, data: upperBoundDiffData,
+          lineStyle: { opacity: 0 }, stack: 'confidence-band',
+          areaStyle: { color: 'rgba(115, 89, 255, 0.2)' }, symbol: 'none'
+        });
+      }
     }
+
     if (selectedParams.value.includes('chilledwater')) {
       legendData.push('冷负荷 (kWh)')
       yAxisConfig.push({
-        type: 'value', name: '冷量', position: 'right', nameTextStyle: { color: '#7359FF' },
-        splitLine: { show: false }, axisLabel: { color: '#7359FF' }
+        type: 'value', name: '冷量', position: 'right', nameTextStyle: { color: '#00FF9D' },
+        splitLine: { show: false }, axisLabel: { color: '#00FF9D' }
       })
       seriesConfig.push({
         name: '冷负荷 (kWh)', type: 'line', yAxisIndex: yAxisConfig.length - 1, smooth: true, data: waterData,
-        lineStyle: { color: '#7359FF', width: 2, type: 'dashed' }
+        lineStyle: { color: '#00FF9D', width: 2, type: 'dashed' }
       })
     }
 
     lineChart.setOption({
-      tooltip: { trigger: 'axis', backgroundColor: 'rgba(11, 9, 26, 0.8)', textStyle: { color: '#fff' }, borderColor: '#2A2946' },
+      tooltip: {
+        trigger: 'axis',
+        backgroundColor: 'rgba(11, 9, 26, 0.8)',
+        textStyle: { color: '#fff' },
+        borderColor: '#2A2946',
+        // 过滤掉我们用来撑起置信区间的那个“透明支撑线”
+        formatter: function (params) {
+          let html = `${params[0].axisValue}<br/>`;
+          params.forEach(p => {
+            if (p.seriesName !== '置信区间支撑' && p.value !== undefined && p.value !== null) {
+              html += `${p.marker} ${p.seriesName}: <b>${p.value}</b><br/>`;
+            }
+          });
+          return html;
+        }
+      },
       legend: { data: legendData, textStyle: { color: '#a0a2b8' }, icon: 'circle', top: '0%', right: '5%' },
       grid: { left: '3%', right: '4%', bottom: '3%', top: '18%', containLabel: true },
       xAxis: { type: 'category', data: xData, axisLabel: { color: '#a0a2b8' } },
@@ -522,8 +579,6 @@ const fetchDataAndRender = async () => {
     }, true)
 
     updateRadarChart(parseFloat(kpiData[2].value))
-
-    // 💡 路线 B 的核心：传入当前基础建筑能耗，交由新函数推演全园数据
     updateSunburstChart(totalElec, totalWater)
 
   } catch (error) {
@@ -536,11 +591,8 @@ const updateRadarChart = (baseCop) => {
   const effectiveCop = baseCop > 0 ? baseCop : 4.0;
 
   const currentValues = [
-    (effectiveCop * 1.2).toFixed(1),
-    (effectiveCop * 0.7).toFixed(1),
-    1.5,
-    (effectiveCop * 1.05).toFixed(1),
-    (effectiveCop * 0.4).toFixed(1)
+    (effectiveCop * 1.2).toFixed(1), (effectiveCop * 0.7).toFixed(1), 1.5,
+    (effectiveCop * 1.05).toFixed(1), (effectiveCop * 0.4).toFixed(1)
   ]
 
   radarChart.setOption({
@@ -552,28 +604,16 @@ const updateRadarChart = (baseCop) => {
         { name: '冷水机组', max: 6.5 }, { name: '冷冻水泵', max: 3.5 },
         { name: '冷却水泵', max: 3.5 }, { name: '冷却塔', max: 5.0 }, { name: '末端风机', max: 2.5 }
       ],
-      splitArea: { show: false },
-      axisLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.1)' } },
+      splitArea: { show: false }, axisLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.1)' } },
       splitLine: { lineStyle: { color: 'rgba(0, 240, 255, 0.2)' } },
       axisName: { color: '#e0e2f5', fontSize: 12, padding: [3, 5] },
       center: ['50%', '45%'], radius: '65%'
     },
     series: [{
-      name: '能效比对比', type: 'radar',
-      animationType: 'scale',
-      animationDuration: 2500,
-      animationEasing: 'elasticOut',
+      name: '能效比对比', type: 'radar', animationType: 'scale', animationDuration: 2500, animationEasing: 'elasticOut',
       data: [
-        {
-          value: currentValues, name: '当前实时 COP',
-          areaStyle: { color: 'rgba(0, 240, 255, 0.3)' },
-          lineStyle: { width: 2, shadowBlur: 10, shadowColor: '#00F0FF' }
-        },
-        {
-          value: [5.5, 3.0, 2.8, 4.5, 2.0], name: '设计基准 COP',
-          areaStyle: { color: 'rgba(0, 255, 157, 0.1)' },
-          lineStyle: { type: 'dashed', width: 2 }
-        }
+        { value: currentValues, name: '当前实时 COP', areaStyle: { color: 'rgba(0, 240, 255, 0.3)' }, lineStyle: { width: 2, shadowBlur: 10, shadowColor: '#00F0FF' } },
+        { value: [5.5, 3.0, 2.8, 4.5, 2.0], name: '设计基准 COP', areaStyle: { color: 'rgba(0, 255, 157, 0.1)' }, lineStyle: { type: 'dashed', width: 2 } }
       ]
     }]
   })
@@ -602,7 +642,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* ================= 全局容器 ================= */
 .dashboard-container {
   display: flex;
   flex-direction: column;
@@ -611,7 +650,6 @@ onUnmounted(() => {
   box-sizing: border-box;
 }
 
-/* ================= 统一 Bento Box 面板风格 ================= */
 .bento-panel,
 .bento-card {
   background: rgba(11, 9, 26, 0.6);
@@ -626,7 +664,6 @@ onUnmounted(() => {
   border-color: rgba(0, 240, 255, 0.3);
 }
 
-/* ================= 1. 顶部控制栏 ================= */
 .global-control {
   display: flex;
   justify-content: space-between;
@@ -703,6 +740,28 @@ onUnmounted(() => {
   margin-right: 15px;
 }
 
+/* 🚀 预测开关专属赛博朋克深紫配色 */
+:deep(.ai-predict-switch .el-switch__core) {
+  border-color: #2A2946;
+  background-color: #1f1d36;
+}
+
+:deep(.ai-predict-switch.is-checked .el-switch__core) {
+  border-color: #7359FF;
+  background-color: rgba(115, 89, 255, 0.8);
+  box-shadow: 0 0 10px rgba(115, 89, 255, 0.5);
+}
+
+:deep(.ai-predict-switch .el-switch__label) {
+  color: #a0a2b8;
+}
+
+:deep(.ai-predict-switch.is-checked .el-switch__label) {
+  color: #7359FF;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(115, 89, 255, 0.3);
+}
+
 .date-navigator {
   display: flex;
   align-items: center;
@@ -772,7 +831,6 @@ onUnmounted(() => {
   font-weight: normal;
 }
 
-/* ================= 2. KPI 卡片区域 ================= */
 .kpi-section {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -844,7 +902,6 @@ onUnmounted(() => {
   color: #FF4D4F;
 }
 
-/* ================= 3. 主体图表网格 ================= */
 .main-grid {
   display: grid;
   grid-template-columns: 1.3fr 1fr;
@@ -911,7 +968,6 @@ onUnmounted(() => {
   grid-row: 2 / 3;
 }
 
-/* ================= 告警列表与呼吸灯 ================= */
 .alarm-list {
   display: flex;
   flex-direction: column;
@@ -1030,7 +1086,6 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
-/* ================= 🚀 告警瀑布流专属动画 ================= */
 .list-anim-move {
   transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -1056,7 +1111,6 @@ onUnmounted(() => {
   transform: translateX(50px);
 }
 
-/* ================= 增强表头的“实时感” ================= */
 .live-indicator {
   font-size: 12px;
   color: #00FF9D;
