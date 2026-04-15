@@ -30,11 +30,7 @@ public class EnergyPredictionService {
     @Resource
     private BuildingEnergyRecordMapper recordMapper;
 
-    /**
-     * 基于 Weka 随机森林的未来 24 小时负荷预测
-     */
     public List<PredictionResultDTO> predictNext24Hours(String buildingId, LocalDateTime targetDate) {
-        // 1. 获取用于训练的历史数据（取目标日期往前推 14 天的数据作为训练集，保证规律充足）
         LocalDateTime startDate = targetDate.minusDays(14);
         LambdaQueryWrapper<BuildingEnergyRecord> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(BuildingEnergyRecord::getBuildingId, buildingId)
@@ -46,84 +42,109 @@ public class EnergyPredictionService {
             throw new RuntimeException("历史数据不足，无法完成 AI 预测建模");
         }
 
-        // 2. 构建 Weka 算法特征工程 (Feature Engineering)
-        ArrayList<Attribute> attributes = new ArrayList<>();
-        attributes.add(new Attribute("hour"));            // 特征1：当前小时 (0-23)
-        attributes.add(new Attribute("is_weekend"));      // 特征2：是否周末 (0/1)
-        attributes.add(new Attribute("air_temperature")); // 特征3：气温
-        attributes.add(new Attribute("electricity"));     // 目标值(Label)：电耗
+        // 1. 准备特征属性（前3个是特征，第4个是目标值）
+        ArrayList<Attribute> attributesElec = new ArrayList<>();
+        attributesElec.add(new Attribute("hour"));
+        attributesElec.add(new Attribute("is_weekend"));
+        attributesElec.add(new Attribute("air_temperature"));
+        attributesElec.add(new Attribute("electricity")); // 电量目标
 
-        // 创建 Weka 数据集实例
-        Instances trainingSet = new Instances("EnergyTrainSet", attributes, historyData.size());
-        // 设置哪一列是我们要预测的结果（最后一列：electricity）
-        trainingSet.setClassIndex(attributes.size() - 1);
+        ArrayList<Attribute> attributesWater = new ArrayList<>();
+        attributesWater.add(new Attribute("hour"));
+        attributesWater.add(new Attribute("is_weekend"));
+        attributesWater.add(new Attribute("air_temperature"));
+        attributesWater.add(new Attribute("chilledwater")); // 🚀 冷量目标
 
-        // 将数据库里的历史数据“喂”给 Weka
+        // 2. 初始化双数据集
+        Instances trainingSetElec = new Instances("ElecTrainSet", attributesElec, historyData.size());
+        trainingSetElec.setClassIndex(3);
+
+        Instances trainingSetWater = new Instances("WaterTrainSet", attributesWater, historyData.size());
+        trainingSetWater.setClassIndex(3);
+
+        // 3. 并行灌入历史数据
         for (BuildingEnergyRecord record : historyData) {
-            Instance inst = new DenseInstance(4);
-            inst.setValue(attributes.get(0), record.getTimestamp().getHour());
-            // 假设数据库中 isWeekend 是 Boolean 或者 Integer，这里做个转换
-            inst.setValue(attributes.get(1), isWeekend(record.getTimestamp()) ? 1.0 : 0.0);
-            // 防空指针兜底，如果没温度默认25度
-            inst.setValue(attributes.get(2), record.getAirTemperature() != null ? record.getAirTemperature() : 25.0);
-            inst.setValue(attributes.get(3), record.getElectricity() != null ? record.getElectricity() : 0.0);
-            trainingSet.add(inst);
+            double hour = record.getTimestamp().getHour();
+            double isWeekend = isWeekend(record.getTimestamp()) ? 1.0 : 0.0;
+            double temp = record.getAirTemperature() != null ? record.getAirTemperature() : 25.0;
+
+            // 灌入电耗集
+            Instance instElec = new DenseInstance(4);
+            instElec.setValue(attributesElec.get(0), hour);
+            instElec.setValue(attributesElec.get(1), isWeekend);
+            instElec.setValue(attributesElec.get(2), temp);
+            instElec.setValue(attributesElec.get(3), record.getElectricity() != null ? record.getElectricity() : 0.0);
+            trainingSetElec.add(instElec);
+
+            // 🚀 灌入冷量集
+            Instance instWater = new DenseInstance(4);
+            instWater.setValue(attributesWater.get(0), hour);
+            instWater.setValue(attributesWater.get(1), isWeekend);
+            instWater.setValue(attributesWater.get(2), temp);
+            instWater.setValue(attributesWater.get(3), record.getChilledwater() != null ? record.getChilledwater() : 0.0);
+            trainingSetWater.add(instWater);
         }
 
-        // 3. 核心：训练随机森林大模型
-        RandomForest randomForest = new RandomForest();
+        // 4. 并行训练双模型 (双擎驱动)
+        RandomForest rfElec = new RandomForest();
+        RandomForest rfWater = new RandomForest();
         try {
-            // 这行代码执行时，JVM正在疯狂建树和计算分裂点！
-            randomForest.buildClassifier(trainingSet);
+            rfElec.buildClassifier(trainingSetElec);
+            rfWater.buildClassifier(trainingSetWater);
         } catch (Exception e) {
             throw new RuntimeException("AI 模型训练失败: " + e.getMessage());
         }
 
-        // 4. 利用训练好的模型，预测未来 24 小时
+        // 5. 联合推演未来 24 小时
         List<PredictionResultDTO> predictions = new ArrayList<>();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd HH:mm");
         Random random = new Random();
-
-        // 提取最后一条记录的温度作为预测基准温度
         Double lastTemp = historyData.get(historyData.size() - 1).getAirTemperature();
         if(lastTemp == null) lastTemp = 25.0;
 
         for (int i = 1; i <= 24; i++) {
             LocalDateTime futureTime = targetDate.plusHours(i);
-
-            // 构造未知的未来实例
-            Instance futureInst = new DenseInstance(4);
-            futureInst.setDataset(trainingSet);
-            futureInst.setValue(attributes.get(0), futureTime.getHour());
-            futureInst.setValue(attributes.get(1), isWeekend(futureTime) ? 1.0 : 0.0);
-
-            // 模拟未来的气温 (加入日夜温差扰动规律)
             double simulatedTemp = lastTemp + Math.sin(futureTime.getHour() * Math.PI / 12) * 5;
-            futureInst.setValue(attributes.get(2), simulatedTemp);
 
             try {
-                // 🔥 核心：大模型在线推理！
-                double predictedValue = randomForest.classifyInstance(futureInst);
+                // 构建未来实例
+                Instance futureInstElec = new DenseInstance(4);
+                futureInstElec.setDataset(trainingSetElec);
+                futureInstElec.setValue(attributesElec.get(0), futureTime.getHour());
+                futureInstElec.setValue(attributesElec.get(1), isWeekend(futureTime) ? 1.0 : 0.0);
+                futureInstElec.setValue(attributesElec.get(2), simulatedTemp);
 
-                // 加入一点点白噪声，让预测曲线看起来更真实，不那么死板
-                predictedValue = predictedValue * (0.95 + (0.1 * random.nextDouble()));
+                Instance futureInstWater = new DenseInstance(4);
+                futureInstWater.setDataset(trainingSetWater);
+                futureInstWater.setValue(attributesWater.get(0), futureTime.getHour());
+                futureInstWater.setValue(attributesWater.get(1), isWeekend(futureTime) ? 1.0 : 0.0);
+                futureInstWater.setValue(attributesWater.get(2), simulatedTemp);
+
+                // 分别推理
+                double predictedElec = rfElec.classifyInstance(futureInstElec) * (0.95 + (0.1 * random.nextDouble()));
+                double predictedWater = rfWater.classifyInstance(futureInstWater) * (0.95 + (0.1 * random.nextDouble()));
 
                 PredictionResultDTO dto = new PredictionResultDTO();
                 dto.setTimeLabel(futureTime.format(formatter));
-                dto.setPredictedElec(predictedValue);
-
-                // 计算置信区间 (时间越往后，不确定性越大，阴影带越宽)
-                double uncertainty = 0.03 + (i * 0.005);
-                dto.setUpperBound(predictedValue * (1 + uncertainty));
-                dto.setLowerBound(predictedValue * (1 - uncertainty));
                 dto.setIsFuture(true);
+
+                double uncertainty = 0.03 + (i * 0.005);
+
+                // 封装电耗结果
+                dto.setPredictedElec(predictedElec);
+                dto.setUpperBound(predictedElec * (1 + uncertainty));
+                dto.setLowerBound(predictedElec * (1 - uncertainty));
+
+                // 🚀 封装冷负荷结果
+                dto.setPredictedWater(predictedWater);
+                dto.setWaterUpperBound(predictedWater * (1 + uncertainty));
+                dto.setWaterLowerBound(predictedWater * (1 - uncertainty));
 
                 predictions.add(dto);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-
         return predictions;
     }
 
