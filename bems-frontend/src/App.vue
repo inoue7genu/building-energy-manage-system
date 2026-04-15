@@ -30,19 +30,6 @@
           <template #title>数据中心与报表</template>
         </el-menu-item>
 
-        <el-menu-item index="/diagnosis">
-          <el-icon>
-            <Cpu />
-          </el-icon>
-          <template #title>智能诊断中心</template>
-        </el-menu-item>
-
-        <el-menu-item index="/knowledge">
-          <el-icon>
-            <Collection />
-          </el-icon>
-          <template #title>运维知识库</template>
-        </el-menu-item>
       </el-menu>
 
       <div class="collapse-trigger" @click="isCollapsed = !isCollapsed">
@@ -90,8 +77,8 @@
 import { ref, computed, onMounted, provide } from 'vue'
 import { useRoute } from 'vue-router'
 import {
-  DataLine, Search, Cpu, Odometer,
-  Collection, Timer, Fold, Expand
+  DataLine, Search, Odometer,
+  Timer, Fold, Expand
 } from '@element-plus/icons-vue'
 import GlobalAiAssistant from './components/GlobalAiAssistant.vue'
 
@@ -104,9 +91,7 @@ const currentTime = ref('')
 const currentPathName = computed(() => {
   const map = {
     '/dashboard': '能效态势看板 // Energy Dashboard',
-    '/query': '数据中心与智能报表 // Data Center',
-    '/diagnosis': '故障诊断中心 // AI Diagnosis',
-    '/knowledge': '运维标准知识库 // Knowledge Base'
+    '/query': '数据中心与智能报表 // Data Center'
   }
   return map[route.path] || '系统主页'
 })
