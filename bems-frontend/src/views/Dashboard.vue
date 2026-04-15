@@ -71,7 +71,36 @@
 
     <div class="kpi-section">
       <div v-for="(kpi, index) in kpiData" :key="index" class="bento-card kpi-card">
-        <div class="kpi-title">{{ kpi.title }}</div>
+        <div class="kpi-title">
+          {{ kpi.title }}
+
+          <el-popover v-if="kpi.title === '空调系统综合 COP'" placement="bottom-start" width="280" trigger="hover"
+            :teleported="true" popper-class="cyber-popover">
+            <template #reference>
+              <el-icon class="help-icon">
+                <QuestionFilled />
+              </el-icon>
+            </template>
+            <div class="cop-explainer">
+              <div class="explainer-title">📊 COP 实时推算公式</div>
+              <div class="explainer-formula">
+                <span class="hl-green">{{ kpiData[1].value }}</span> kWh (产出冷量) <br />
+                ÷ <span class="hl-cyan">{{ kpiData[0].value }}</span> kWh (消耗电量) <br />
+                = <span class="hl-purple">{{ kpi.value }}</span> (综合能效)
+              </div>
+              <div class="explainer-text">
+                💡 <b>通俗理解：</b><br />
+                空调相当于“热量搬运工”。当前消耗 1 块钱的电费，能为您搬走相当于 <b class="hl-purple">{{ kpi.value }}</b> 块钱的热量。<br />
+                <div style="margin-top: 5px;">
+                  状态：<span :class="kpi.value >= 3.5 ? 'hl-green' : 'hl-orange'">
+                    {{ kpi.value >= 3.5 ? '高效节能 (极度省钱) 🌟' : '效率一般 (存在优化空间) ⚠️' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </el-popover>
+
+        </div>
         <div class="kpi-value" :class="kpi.glowClass" :style="{ color: kpi.color }">
           <span class="num">{{ kpi.value }}</span> <span class="unit">{{ kpi.unit }}</span>
         </div>
@@ -157,7 +186,7 @@
 
 <script setup>
 import { ref, computed, onMounted, reactive, onUnmounted, inject } from 'vue'
-import { ArrowLeft, ArrowRight, Top, Bottom, Warning, Cpu } from '@element-plus/icons-vue'
+import { ArrowLeft, ArrowRight, Top, Bottom, Warning, Cpu, QuestionFilled } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
@@ -1179,5 +1208,136 @@ onUnmounted(() => {
     opacity: 0.3;
     transform: scale(0.8);
   }
+}
+
+/* ================= 🚀 COP 科普悬浮窗专属样式 ================= */
+.help-icon {
+  margin-left: 6px;
+  cursor: pointer;
+  color: #7359FF;
+  vertical-align: middle;
+  transition: all 0.3s;
+}
+
+.help-icon:hover {
+  color: #00F0FF;
+  filter: drop-shadow(0 0 5px #00F0FF);
+  transform: scale(1.1);
+}
+
+:deep(.el-popper.cyber-popover) {
+  background: rgba(11, 9, 26, 0.9) !important;
+  backdrop-filter: blur(15px) !important;
+  border: 1px solid rgba(115, 89, 255, 0.6) !important;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.8), 0 0 15px rgba(115, 89, 255, 0.3) !important;
+  color: #e0e2f5 !important;
+  border-radius: 8px !important;
+  z-index: 9999 !important;
+  /* 强制提升到最顶层 */
+}
+
+/* 修正小箭头颜色，防止出现白色刺眼三角形 */
+:deep(.cyber-popover .el-popper__arrow::before) {
+  background: rgba(11, 9, 26, 1) !important;
+  border: 1px solid rgba(115, 89, 255, 0.6) !important;
+}
+
+.cop-explainer {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.explainer-title {
+  font-weight: bold;
+  color: #00F0FF;
+  margin-bottom: 10px;
+  border-bottom: 1px dashed rgba(115, 89, 255, 0.4);
+  padding-bottom: 6px;
+  letter-spacing: 1px;
+}
+
+.explainer-formula {
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 12px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.hl-green {
+  color: #00FF9D;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(0, 255, 157, 0.4);
+}
+
+.hl-cyan {
+  color: #00F0FF;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(0, 240, 255, 0.4);
+}
+
+.hl-purple {
+  color: #7359FF;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(115, 89, 255, 0.4);
+}
+
+.hl-orange {
+  color: #FAAD14;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(250, 173, 20, 0.4);
+}
+
+.explainer-text {
+  color: #a0a2b8;
+}
+
+.explainer-text b {
+  color: #fff;
+}
+</style>
+
+<style>
+/* 针对全局赛博朋克弹出框的深度定制 */
+.el-popper.cyber-popover {
+  background: rgba(16, 14, 35, 0.95) !important;
+  /* 更深邃的背景色 */
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid #7359FF !important;
+  /* 紫色发光边框 */
+  box-shadow: 0 0 20px rgba(115, 89, 255, 0.4) !important;
+  color: #e0e2f5 !important;
+  border-radius: 8px !important;
+  padding: 15px !important;
+  z-index: 10000 !important;
+  /* 确保在最上层 */
+}
+
+/* 修正弹出框的小三角箭头颜色，防止它变白 */
+.el-popper.cyber-popover .el-popper__arrow::before {
+  background: rgba(16, 14, 35, 1) !important;
+  border: 1px solid #7359FF !important;
+  visibility: visible;
+}
+
+/* 弹出框内部的文字细节优化 */
+.cyber-popover .explainer-title {
+  color: #00F0FF !important;
+  font-weight: bold;
+  margin-bottom: 8px;
+  border-bottom: 1px dashed rgba(115, 89, 255, 0.5);
+}
+
+.cyber-popover .explainer-formula {
+  background: rgba(0, 0, 0, 0.5) !important;
+  color: #fff !important;
+  border-radius: 4px;
+  margin: 10px 0;
+  padding: 8px;
+  font-family: 'JetBrains Mono', monospace;
 }
 </style>
