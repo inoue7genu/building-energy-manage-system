@@ -712,6 +712,9 @@ onUnmounted(() => {
   gap: 20px;
   padding-bottom: 40px;
   box-sizing: border-box;
+
+  /* 🚀 核心修改：强制设为 0，确保内容顶格 */
+  padding-top: 0 !important;
 }
 
 .bento-panel,
@@ -728,13 +731,46 @@ onUnmounted(() => {
   border-color: rgba(0, 240, 255, 0.3);
 }
 
+/* 🚀 修复版：悬浮岛式吸顶中控台 */
 .global-control {
+  /* 1. 保持你最满意的内部舒适布局 */
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 20px;
+  padding: 16px 24px;
+  /* 稍微加深内边距，让内部更显大气 */
   flex-wrap: wrap;
   gap: 15px;
+
+  /* 2. 🚀 核心突破：利用负边距“吃掉”外层的空隙 */
+  position: sticky;
+  top: -20px;
+  z-index: 2000;
+
+  /* 假设外层 padding 是 20px，我们通过负值顶上去 */
+  margin: -20px -20px 24px -20px;
+  width: calc(100% + 40px);
+  /* 补偿负边距带来的宽度缩减 */
+
+  /* 3. 视觉造型：顶部平齐，底部圆角 */
+  border-radius: 0 0 16px 16px;
+  /* 顶部 0 圆角实现贴合，底部保留大圆角增强设计感 */
+
+  /* 4. 赛博朋克深海滤镜 */
+  background: rgba(11, 9, 26, 0.88) !important;
+  backdrop-filter: blur(20px) saturate(150%);
+  border-bottom: 2px solid rgba(115, 89, 255, 0.5);
+  /* 强化底部发光分割线 */
+
+  /* 阴影向下延伸 */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+}
+
+/* 悬停时稍微加深紫色流光 */
+.global-control:hover {
+  border-bottom-color: #00F0FF;
+  box-shadow: 0 10px 40px rgba(0, 240, 255, 0.15);
 }
 
 .control-left {
