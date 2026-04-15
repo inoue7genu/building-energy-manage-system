@@ -375,6 +375,7 @@ const fetchCalendarAndRender = async () => {
 }
 
 // 🚀 核心预测获取与渲染逻辑重构
+// 🚀 核心预测获取与渲染逻辑重构 (冷电双控版)
 const fetchDataAndRender = async () => {
   try {
     if (selectedParams.value.length === 0) {
@@ -406,10 +407,15 @@ const fetchDataAndRender = async () => {
     const waterData = [];
     const abnormalPoints = [];
 
-    // 预测用数据通道
+    // 预测用数据通道 (电)
     const predElecData = [];
     const lowerBoundData = [];
-    const upperBoundDiffData = []; // 用于 ECharts Stack 叠加
+    const upperBoundDiffData = [];
+
+    // 🚀 预测用数据通道 (冷)
+    const predWaterData = [];
+    const lowerBoundWaterData = [];
+    const upperBoundDiffWaterData = [];
 
     // 填充历史数据
     records.forEach((item, index) => {
@@ -424,6 +430,10 @@ const fetchDataAndRender = async () => {
       predElecData.push(null)
       lowerBoundData.push(null)
       upperBoundDiffData.push(null)
+
+      predWaterData.push(null)
+      lowerBoundWaterData.push(null)
+      upperBoundDiffWaterData.push(null)
 
       if (item.status && item.status !== 'normal') {
         abnormalCount++
@@ -447,10 +457,17 @@ const fetchDataAndRender = async () => {
 
         // 🌟 魔法步骤：缝合历史与未来，避免图表断线
         if (elecData.length > 0 && predRecords.length > 0) {
-          const lastRealValue = elecData[elecData.length - 1];
-          predElecData[predElecData.length - 1] = lastRealValue;
-          lowerBoundData[lowerBoundData.length - 1] = lastRealValue;
-          upperBoundDiffData[upperBoundDiffData.length - 1] = 0; // 上下限在此处重合
+          // 缝合电
+          const lastRealElec = elecData[elecData.length - 1];
+          predElecData[predElecData.length - 1] = lastRealElec;
+          lowerBoundData[lowerBoundData.length - 1] = lastRealElec;
+          upperBoundDiffData[upperBoundDiffData.length - 1] = 0;
+
+          // 🚀 缝合冷
+          const lastRealWater = waterData[waterData.length - 1];
+          predWaterData[predWaterData.length - 1] = lastRealWater;
+          lowerBoundWaterData[lowerBoundWaterData.length - 1] = lastRealWater;
+          upperBoundDiffWaterData[upperBoundDiffWaterData.length - 1] = 0;
         }
 
         // 追加未来 24 小时的数据
@@ -459,14 +476,19 @@ const fetchDataAndRender = async () => {
           elecData.push(null); // 历史线停止生长
           waterData.push(null);
 
+          // 电量预测
           predElecData.push(parseFloat(item.predictedElec));
+          const lowerElec = parseFloat(item.lowerBound);
+          const upperElec = parseFloat(item.upperBound);
+          lowerBoundData.push(lowerElec);
+          upperBoundDiffData.push(upperElec - lowerElec);
 
-          const lower = parseFloat(item.lowerBound);
-          const upper = parseFloat(item.upperBound);
-          lowerBoundData.push(lower);
-
-          // ECharts 画置信区间的核心算法：上线 = 差值堆叠在下线上
-          upperBoundDiffData.push(upper - lower);
+          // 🚀 冷量预测
+          predWaterData.push(parseFloat(item.predictedWater));
+          const lowerWater = parseFloat(item.waterLowerBound);
+          const upperWater = parseFloat(item.waterUpperBound);
+          lowerBoundWaterData.push(lowerWater);
+          upperBoundDiffWaterData.push(upperWater - lowerWater);
         });
 
       } catch (err) {
@@ -485,7 +507,7 @@ const fetchDataAndRender = async () => {
       lineChart.on('click', (params) => {
         if (params.componentType === 'markPoint' && params.data.customData) {
           const pd = params.data.customData;
-          const promptText = `【BEMS 智能诊断请求】\n目标节点：${pd.building}\n发生日期：${pd.date}\n异常时段：${pd.time}\n异常现象：系统判定为【${pd.level}】，该时段总电耗达 ${pd.val} kWh。\n\n请作为高级暖通与建筑能源专家，结合 RAG 知识库，分析导致此能耗突变的 3 个最可能原因并给出针对性排查步骤。（⚠️ 约束条件：请直奔主题，分点作答，300字以内）`;
+          const promptText = `【BEMS 智能诊断请求】\n目标节点：${pd.building}\n发生日期：${pd.date}\n异常时段：${pd.time}\n异常现象：系统判定为【${pd.level}】，该时段总电耗达 ${pd.val} kWh。\n\n请作为高级暖通与建筑能源专家，结合 RAG 知识库，分析导致此能耗突变的 3 个最可能原因并给出针对性排查步骤。`;
           if (callBemsAi) callBemsAi(promptText);
         }
       });
@@ -495,9 +517,10 @@ const fetchDataAndRender = async () => {
     const yAxisConfig = []
     const seriesConfig = []
 
+    // ---- 组装电耗系列 ----
     if (selectedParams.value.includes('electricity')) {
       legendData.push('耗电量 (实测)')
-      if (enablePrediction.value) legendData.push('耗电量 (AI预测)', '置信区间')
+      if (enablePrediction.value) legendData.push('耗电量 (AI预测)')
 
       yAxisConfig.push({
         type: 'value', name: '电耗', position: 'left', nameTextStyle: { color: '#00F0FF' },
@@ -510,10 +533,8 @@ const fetchDataAndRender = async () => {
         lineStyle: { color: '#00F0FF', width: 3 },
         areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(0,240,255,0.4)' }, { offset: 1, color: 'rgba(0,240,255,0)' }]) },
         markPoint: { symbol: 'pin', symbolSize: 50, label: { color: '#fff', fontSize: 10 }, data: abnormalPoints },
-        // 如果开了预测，画一根垂直分割线
         markLine: enablePrediction.value ? {
-          silent: true,
-          data: [{ xAxis: xData[records.length - 1], label: { formatter: '现在', color: '#7359FF' } }],
+          silent: true, data: [{ xAxis: xData[records.length - 1], label: { formatter: '现在', color: '#7359FF' } }],
           lineStyle: { color: '#7359FF', type: 'dashed', width: 2 }
         } : null,
         animationDuration: 1500
@@ -523,49 +544,63 @@ const fetchDataAndRender = async () => {
       if (enablePrediction.value) {
         seriesConfig.push({
           name: '耗电量 (AI预测)', type: 'line', yAxisIndex: yAxisConfig.length - 1, smooth: true, data: predElecData,
-          lineStyle: { color: '#7359FF', width: 3, type: 'dashed' },
-          symbol: 'none'
+          lineStyle: { color: '#7359FF', width: 3, type: 'dashed' }, symbol: 'none'
         });
-
-        // 置信区间下限 (透明作为底部支撑)
         seriesConfig.push({
-          name: '置信区间支撑', type: 'line', yAxisIndex: yAxisConfig.length - 1, smooth: true, data: lowerBoundData,
-          lineStyle: { opacity: 0 }, stack: 'confidence-band', symbol: 'none'
+          name: '电量下限支撑', type: 'line', yAxisIndex: yAxisConfig.length - 1, smooth: true, data: lowerBoundData,
+          lineStyle: { opacity: 0 }, stack: 'confidence-band-elec', symbol: 'none'
         });
-
-        // 置信区间上限 (实际渲染的紫红色阴影面积)
         seriesConfig.push({
-          name: '置信区间', type: 'line', yAxisIndex: yAxisConfig.length - 1, smooth: true, data: upperBoundDiffData,
-          lineStyle: { opacity: 0 }, stack: 'confidence-band',
+          name: '电耗置信区间', type: 'line', yAxisIndex: yAxisConfig.length - 1, smooth: true, data: upperBoundDiffData,
+          lineStyle: { opacity: 0 }, stack: 'confidence-band-elec',
           areaStyle: { color: 'rgba(115, 89, 255, 0.2)' }, symbol: 'none'
         });
       }
     }
 
+    // ---- 🚀 组装冷负荷系列 ----
     if (selectedParams.value.includes('chilledwater')) {
-      legendData.push('冷负荷 (kWh)')
+      legendData.push('冷负荷 (实测)')
+      if (enablePrediction.value) legendData.push('冷负荷 (AI预测)')
+
       yAxisConfig.push({
         type: 'value', name: '冷量', position: 'right', nameTextStyle: { color: '#00FF9D' },
         splitLine: { show: false }, axisLabel: { color: '#00FF9D' }
       })
+
+      // 实线
       seriesConfig.push({
-        name: '冷负荷 (kWh)', type: 'line', yAxisIndex: yAxisConfig.length - 1, smooth: true, data: waterData,
-        lineStyle: { color: '#00FF9D', width: 2, type: 'dashed' }
+        name: '冷负荷 (实测)', type: 'line', yAxisIndex: yAxisConfig.length - 1, smooth: true, data: waterData,
+        lineStyle: { color: '#00FF9D', width: 2 }
       })
+
+      // 🚀 虚线与阴影
+      if (enablePrediction.value) {
+        seriesConfig.push({
+          name: '冷负荷 (AI预测)', type: 'line', yAxisIndex: yAxisConfig.length - 1, smooth: true, data: predWaterData,
+          lineStyle: { color: '#00FF9D', width: 2, type: 'dashed' }, symbol: 'none'
+        });
+        seriesConfig.push({
+          name: '冷量下限支撑', type: 'line', yAxisIndex: yAxisConfig.length - 1, smooth: true, data: lowerBoundWaterData,
+          lineStyle: { opacity: 0 }, stack: 'confidence-band-water', symbol: 'none'
+        });
+        seriesConfig.push({
+          name: '冷负荷置信区间', type: 'line', yAxisIndex: yAxisConfig.length - 1, smooth: true, data: upperBoundDiffWaterData,
+          lineStyle: { opacity: 0 }, stack: 'confidence-band-water',
+          areaStyle: { color: 'rgba(0, 255, 157, 0.2)' }, symbol: 'none'
+        });
+      }
     }
 
     lineChart.setOption({
       tooltip: {
-        trigger: 'axis',
-        backgroundColor: 'rgba(11, 9, 26, 0.8)',
-        textStyle: { color: '#fff' },
-        borderColor: '#2A2946',
-        // 过滤掉我们用来撑起置信区间的那个“透明支撑线”
+        trigger: 'axis', backgroundColor: 'rgba(11, 9, 26, 0.8)', textStyle: { color: '#fff' }, borderColor: '#2A2946',
         formatter: function (params) {
           let html = `${params[0].axisValue}<br/>`;
           params.forEach(p => {
-            if (p.seriesName !== '置信区间支撑' && p.value !== undefined && p.value !== null) {
-              html += `${p.marker} ${p.seriesName}: <b>${p.value}</b><br/>`;
+            // 过滤掉所有用于画图的隐形支撑线
+            if (!p.seriesName.includes('支撑') && !p.seriesName.includes('置信区间') && p.value !== undefined && p.value !== null) {
+              html += `${p.marker} ${p.seriesName}: <b>${parseFloat(p.value).toFixed(1)}</b><br/>`;
             }
           });
           return html;
