@@ -6,7 +6,10 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.bems.entity.BuildingEnergyExcelDTO;
 import com.bems.entity.BuildingEnergyRecord;
+import com.bems.entity.PredictionResultDTO;
+import com.bems.service.EnergyPredictionService;
 import com.bems.service.IBuildingEnergyRecordService;
+import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +18,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 
@@ -32,6 +37,9 @@ public class BuildingEnergyRecordController {
 
     @Autowired
     private IBuildingEnergyRecordService energyService;
+
+    @Autowired
+    private EnergyPredictionService predictionService;
 
     @GetMapping("/page")
     public Page<BuildingEnergyRecord> getRecordsByPage(
@@ -212,5 +220,17 @@ public class BuildingEnergyRecordController {
         EasyExcel.write(response.getOutputStream(), BuildingEnergyExcelDTO.class)
                 .sheet("能耗数据切片")
                 .doWrite(exportList);
+    }
+
+    @GetMapping("/predict")
+    public List<PredictionResultDTO> getPrediction(
+            @RequestParam("buildingId") String buildingId,
+            @RequestParam("targetDate") String targetDateStr) { // 格式如 2016-01-01
+
+        // 赛题数据是按小时存的，我们取这一天的 23:59:59 作为历史数据的截止点，推演明天的24小时
+        LocalDateTime targetDate = LocalDateTime.parse(targetDateStr + " 23:59:59",
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
+        return predictionService.predictNext24Hours(buildingId, targetDate);
     }
 }

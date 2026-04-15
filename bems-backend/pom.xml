@@ -89,6 +89,13 @@
             <artifactId>xmlbeans</artifactId>
             <version>3.1.0</version>
         </dependency>
+
+<!--        weka算法-->
+        <dependency>
+            <groupId>nz.ac.waikato.cms.weka</groupId>
+            <artifactId>weka-stable</artifactId>
+            <version>3.8.6</version>
+        </dependency>
     </dependencies>
 
     <build>
