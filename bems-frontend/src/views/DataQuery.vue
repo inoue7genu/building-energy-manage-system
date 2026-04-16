@@ -574,10 +574,11 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(30, 27, 56, 0.4);
-  border: 1px solid #2A2946;
-  border-radius: 8px;
-  padding: 15px 20px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px 24px;
   margin-bottom: 20px;
   flex-wrap: wrap;
   gap: 15px;
@@ -586,7 +587,7 @@ onMounted(() => {
 .filter-left {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 24px;
   flex-wrap: wrap;
 }
 
@@ -596,9 +597,10 @@ onMounted(() => {
 }
 
 .filter-label {
-  color: #a0a2b8;
-  margin-right: 10px;
-  font-weight: bold;
+  color: var(--text-muted);
+  margin-right: 12px;
+  font-weight: 500;
+  font-size: 13px;
   white-space: nowrap;
 }
 
@@ -617,32 +619,33 @@ onMounted(() => {
 }
 
 .reset-btn {
-  padding: 8px 12px;
-  color: #a0a2b8;
-  border-color: #2A2946;
+  padding: 8px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
 }
 
 .reset-btn:hover {
-  color: #FF4D4F;
-  border-color: #FF4D4F;
-  background-color: rgba(255, 77, 79, 0.1);
-  box-shadow: 0 0 8px rgba(255, 77, 79, 0.5);
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 :deep(.el-input__wrapper),
 :deep(.el-range-editor.el-input__wrapper) {
-  background-color: #0b091a !important;
-  box-shadow: 0 0 0 1px #2A2946 inset !important;
+  background-color: #18181b !important;
+  box-shadow: 0 0 0 1px var(--border-color) inset !important;
+  border-radius: 6px;
 }
 
 :deep(.el-input__inner),
 :deep(.el-range-input) {
-  color: #00F0FF !important;
-  font-weight: bold;
+  color: var(--text-main) !important;
+  font-weight: 500;
 }
 
 :deep(.el-range-separator) {
-  color: #a0a2b8;
+  color: var(--text-muted);
 }
 
 :deep(.el-date-table td) {
@@ -650,115 +653,124 @@ onMounted(() => {
 }
 
 .custom-cell {
-  position: relative;
   width: 100%;
   height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 2px 0;
-  border-radius: 4px;
+  border-radius: 6px;
   transition: all 0.2s ease;
+  position: relative;
 }
 
 .custom-cell.is-start,
 .custom-cell.is-end {
-  background-color: #00F0FF !important;
-  color: #000000 !important;
-  box-shadow: 0 0 10px #00F0FF;
+  background-color: var(--accent-primary) !important;
+  color: #fff !important;
+  font-weight: 600;
   z-index: 2;
-  font-weight: bold;
 }
 
 .custom-cell.is-in-range {
-  background-color: rgba(0, 240, 255, 0.5) !important;
-  color: #000000 !important;
-  font-weight: bold;
+  background-color: rgba(59, 130, 246, 0.15) !important;
+  color: var(--text-main) !important;
 }
 
 .custom-cell.is-disabled-visual .cell-text {
-  color: #4a4a5e;
+  color: #52525b;
 }
 
 .cell-text {
   z-index: 10;
-  font-weight: bold;
+  font-size: 13px;
 }
 
 .energy-bar {
   position: absolute;
-  bottom: 2px;
+  bottom: 4px;
   height: 3px;
   border-radius: 2px;
 }
 
 .cyber-btn {
-  background-color: #0b091a;
-  border: 1px solid;
-  font-weight: bold;
-  letter-spacing: 1px;
+  background-color: #27272a;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  font-weight: 500;
+  border-radius: 6px;
+  transition: all 0.2s;
 }
 
 .search-btn {
-  color: #00F0FF;
-  border-color: #00F0FF;
+  background: var(--accent-primary);
+  color: #fff;
+  border: none;
 }
 
 .search-btn:hover {
-  background-color: rgba(0, 240, 255, 0.1);
-  box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+  background: #2563eb;
 }
 
 .export-btn {
-  color: #00FF9D;
-  border-color: #00FF9D;
+  background: #18181b;
+  border-color: var(--border-color);
+  color: var(--text-main);
 }
 
 .export-btn:hover {
-  background-color: rgba(0, 255, 157, 0.1);
-  box-shadow: 0 0 10px rgba(0, 255, 157, 0.5);
+  background: #27272a;
+}
+
+.upload-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px dashed var(--border-color);
+}
+
+.upload-btn:hover {
+  color: var(--text-main);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .table-wrapper {
   flex: 1;
-  background: rgba(30, 27, 56, 0.5);
-  border: 1px solid #2A2946;
-  border-radius: 8px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
   overflow: hidden;
   padding: 1px;
 }
 
 .cyber-table {
-  background-color: transparent !important;
-  --el-table-border-color: #2A2946;
-  --el-table-header-bg-color: #0b091a;
-  --el-table-header-text-color: #a0a2b8;
+  --el-table-border-color: var(--border-color);
+  --el-table-header-bg-color: #09090b;
+  --el-table-header-text-color: var(--text-muted);
   --el-table-tr-bg-color: transparent;
-  --el-table-row-hover-bg-color: rgba(0, 240, 255, 0.1);
+  --el-table-row-hover-bg-color: rgba(255, 255, 255, 0.02);
+  background-color: transparent !important;
 }
 
 :deep(.el-table th.el-table__cell) {
-  background-color: #0b091a !important;
-  border-bottom: 2px solid #2A2946 !important;
-  font-size: 14px;
-  letter-spacing: 1px;
+  background-color: rgba(9, 9, 11, 0.8) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 :deep(.el-table td.el-table__cell) {
-  border-bottom: 1px solid #1f1d36 !important;
-  color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03) !important;
+  color: var(--text-main);
+  font-size: 13px;
 }
 
 :deep(.el-table .el-table__fixed-right) {
-  background-color: #05050f !important;
+  background-color: transparent !important;
 }
 
 :deep(.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell) {
-  background-color: rgba(0, 240, 255, 0.05) !important;
-}
-
-:deep(.el-table__body tr:hover > td.el-table__cell) {
-  background-color: rgba(0, 240, 255, 0.15) !important;
+  background-color: rgba(255, 255, 255, 0.01) !important;
 }
 
 :deep(.el-table),
@@ -769,320 +781,261 @@ onMounted(() => {
 
 .cyber-tag {
   border: none;
-  font-weight: bold;
+  font-weight: 500;
+  padding: 0 10px;
+  border-radius: 4px;
 }
 
 .warning-tag {
-  background-color: #FAAD14;
-  color: #000;
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
 }
 
 .danger-tag {
-  background-color: #FF4D4F;
-  color: #fff;
-  box-shadow: 0 0 8px rgba(255, 77, 79, 0.8);
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
 }
 
 .pagination-wrapper {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
-  background: rgba(30, 27, 56, 0.4);
-  padding: 10px 20px;
-  border: 1px solid #2A2946;
-  border-radius: 8px;
+  background: transparent;
+  padding: 0;
+  border: none;
 }
 
 .cyber-pagination {
   --el-pagination-bg-color: transparent;
-  --el-pagination-text-color: #a0a2b8;
-  --el-pagination-button-color: #a0a2b8;
-  --el-pagination-button-disabled-color: #4a4a5e;
-  --el-pagination-hover-color: #00F0FF;
+  --el-pagination-text-color: var(--text-muted);
+  --el-pagination-button-color: var(--text-muted);
+  --el-pagination-button-disabled-color: #3f3f46;
+  --el-pagination-hover-color: var(--text-main);
 }
 
 :deep(.el-pager li.is-active) {
-  color: #00F0FF;
-  font-weight: bold;
+  color: var(--text-main);
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
 }
 
 /* 导出面板 */
 :deep(.cyber-dialog) {
-  background-color: #0b091a !important;
-  border: 1px solid #00F0FF !important;
-  box-shadow: 0 0 25px rgba(0, 240, 255, 0.2);
-  border-radius: 8px;
+  background-color: #18181b !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  border-radius: 12px;
 }
 
 :deep(.cyber-dialog .el-dialog__header) {
-  background-color: transparent;
-  margin-right: 0;
-  border-bottom: 1px solid #2A2946;
-  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 :deep(.cyber-dialog .el-dialog__title) {
-  color: #00F0FF;
-  font-weight: bold;
-  letter-spacing: 1px;
+  color: #fafafa;
+  font-weight: 600;
   font-size: 16px;
 }
 
-:deep(.cyber-dialog .el-dialog__body) {
-  padding: 25px 30px;
-}
-
 :deep(.cyber-dialog .el-dialog__footer) {
-  background-color: transparent;
-  border-top: 1px solid #2A2946;
-  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .export-desc {
-  color: #a0a2b8;
-  margin-bottom: 15px;
-  font-size: 14px;
-}
-
-.export-options {
-  display: flex;
-  flex-direction: column;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  font-size: 13px;
 }
 
 .export-radio-group {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
 }
 
 .cyber-radio {
   margin: 0 !important;
-  border: 1px solid #2A2946 !important;
-  background: rgba(30, 27, 56, 0.4);
-  border-radius: 6px !important;
-  transition: all 0.3s;
-  display: flex;
-  align-items: center;
+  border: 1px solid var(--border-color) !important;
+  background: transparent;
+  border-radius: 8px !important;
+  transition: all 0.2s;
+  padding: 0 16px;
+  height: 48px;
 }
 
 .cyber-radio.is-bordered.is-checked {
-  border-color: #00F0FF !important;
-  background: rgba(0, 240, 255, 0.1);
-  box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+  border-color: var(--accent-primary) !important;
+  background: rgba(59, 130, 246, 0.05);
 }
 
 :deep(.cyber-radio .el-radio__inner) {
   background-color: transparent;
-  border-color: #4a4a5e;
+  border-color: #52525b;
 }
 
 :deep(.cyber-radio.is-checked .el-radio__inner) {
-  background-color: #00F0FF;
-  border-color: #00F0FF;
+  background-color: var(--accent-primary);
+  border-color: var(--accent-primary);
 }
 
 :deep(.cyber-radio .el-radio__label) {
-  color: #ffffff !important;
-  font-weight: bold;
+  color: #e4e4e7 !important;
+  font-weight: 500;
 }
 
 .data-count {
-  color: #00FF9D;
-  font-weight: normal;
-  margin-left: 5px;
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-left: 8px;
 }
 
 .custom-page-inputs {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 15px;
-  padding: 15px;
-  background: rgba(0, 240, 255, 0.05);
-  border-radius: 6px;
-  border: 1px dashed #00F0FF;
+  margin-top: 12px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
 }
 
 .custom-page-inputs span {
-  color: #fff;
-  font-size: 14px;
-}
-
-.link-icon {
-  color: #00F0FF;
-  font-size: 18px;
-}
-
-.cyber-input-number {
-  width: 100px;
+  color: var(--text-muted);
+  font-size: 13px;
 }
 
 :deep(.cyber-input-number .el-input__wrapper) {
-  background-color: #05050f !important;
-  box-shadow: 0 0 0 1px #2A2946 inset !important;
+  background-color: #09090b !important;
 }
 
-:deep(.cyber-input-number .el-input__inner) {
-  color: #00F0FF !important;
-  font-weight: bold;
-}
-
-:deep(.cyber-input-number .el-input-number__decrease),
-:deep(.cyber-input-number .el-input-number__increase) {
-  background-color: #0b091a !important;
-  border-color: #2A2946 !important;
-  color: #a0a2b8;
-}
-
-:deep(.cyber-input-number .el-input-number__decrease:hover),
-:deep(.cyber-input-number .el-input-number__increase:hover) {
-  color: #00F0FF;
-}
-
-.cancel-btn {
-  color: #a0a2b8;
-  border-color: #2A2946;
-}
-
-.cancel-btn:hover {
-  color: #fff;
-  border-color: #fff;
-}
-
-.pulse-btn {
-  position: relative;
-  overflow: hidden;
-}
-
-.pulse-btn:hover {
-  box-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
-}
-
-/* 异常标签悬浮互动特效 */
-.interactive-tag {
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.interactive-tag:hover {
-  transform: scale(1.05);
-  filter: brightness(1.2);
-}
-
-.warning-tag.interactive-tag:hover {
-  box-shadow: 0 0 12px #FAAD14;
-}
-
-.danger-tag.interactive-tag:hover {
-  box-shadow: 0 0 12px #FF4D4F;
-}
-
-/* 赛博风复选框样式 */
+/* 赛博风复选框样式重置 */
 :deep(.cyber-checkbox-group .el-checkbox__input.is-checked .el-checkbox__inner) {
-  background-color: #00F0FF;
-  border-color: #00F0FF;
+  background-color: var(--accent-primary);
+  border-color: var(--accent-primary);
 }
 
 :deep(.cyber-checkbox-group .el-checkbox__input.is-checked + .el-checkbox__label) {
-  color: #00F0FF;
-  text-shadow: 0 0 5px rgba(0, 240, 255, 0.4);
+  color: var(--text-main);
+  text-shadow: none;
+  font-weight: 500;
+}
+
+/* ==========================================
+   🚀 深度洗掉表格内所有残留的霓虹光晕
+========================================== */
+/* 强制覆盖表格内任何带有 glow 字样的类名或时间列 */
+:deep(.el-table [class*="glow"]),
+:deep(.el-table .cyan-glow),
+:deep(.el-table .time-text),
+:deep(.el-table td .cell span) {
+  text-shadow: none !important;
+  /* 彻底干掉发光 */
+  color: var(--text-main) !important;
+  /* 统一为高级锌白色 */
+}
+
+/* 专门针对“记录时间”等数据列，增加高级的等宽字体排版感 */
+:deep(.el-table td.el-table__cell) {
+  font-family: 'Inter', 'JetBrains Mono', monospace;
+  letter-spacing: 0.5px;
+}
+
+/* 如果你的时间列有特定的绿色/蓝色高亮需求，用背景色代替发光，更符合黑曜石风格 */
+:deep(.el-table .time-column-text) {
+  color: #a1a1aa !important;
+  /* 沉稳的次级灰色 */
+  font-weight: 500;
 }
 </style>
 
 <style>
-/* ==========================================
-   🛡️ 终极降维打击：CSS 视觉完全接管 Element Plus 底层
-========================================== */
-
-/* 1. 精准屏蔽月份面板的原始错误数字 (0-11) */
+/* 日历强制覆写 */
 .el-month-table .cyber-cell-text {
   font-size: 0 !important;
 }
 
-/* 2. 利用 data-text 和伪元素，重新注入完美的 1月-12月 */
 .el-month-table .cyber-cell-text[data-text="0"]::after {
   content: "1月";
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .el-month-table .cyber-cell-text[data-text="1"]::after {
   content: "2月";
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .el-month-table .cyber-cell-text[data-text="2"]::after {
   content: "3月";
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .el-month-table .cyber-cell-text[data-text="3"]::after {
   content: "4月";
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .el-month-table .cyber-cell-text[data-text="4"]::after {
   content: "5月";
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .el-month-table .cyber-cell-text[data-text="5"]::after {
   content: "6月";
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .el-month-table .cyber-cell-text[data-text="6"]::after {
   content: "7月";
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .el-month-table .cyber-cell-text[data-text="7"]::after {
   content: "8月";
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .el-month-table .cyber-cell-text[data-text="8"]::after {
   content: "9月";
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .el-month-table .cyber-cell-text[data-text="9"]::after {
   content: "10月";
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .el-month-table .cyber-cell-text[data-text="10"]::after {
   content: "11月";
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .el-month-table .cyber-cell-text[data-text="11"]::after {
   content: "12月";
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 500;
 }
 
-/* 强制解除 Element Plus 年月面板的空间挤压 */
 :deep(.el-year-table td .cell),
 :deep(.el-month-table td .cell) {
   padding: 0 !important;
   height: 40px !important;
-  /* 给予单元格足够的高度 */
   position: relative !important;
 }
 
-/* 确保自定义单元格能够撑满并显露底部的能量槽 */
 .custom-cell {
   height: 100%;
   width: 100%;
@@ -1094,12 +1047,10 @@ onMounted(() => {
 
 .energy-bar {
   position: absolute;
-  bottom: 2px;
-  height: 4px;
-  /* 稍微加粗一点，在宏观面板更有气势 */
+  bottom: 4px;
+  height: 3px;
   border-radius: 2px;
   left: 50%;
   transform: translateX(-50%);
-  /* 居中对齐 */
 }
 </style>

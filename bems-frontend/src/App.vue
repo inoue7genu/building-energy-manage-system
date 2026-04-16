@@ -9,7 +9,7 @@
     <aside class="sidebar-wrapper" :class="{ 'collapsed': isCollapsed }">
       <div class="sidebar-logo">
         <el-icon :size="28" color="#00F0FF">
-          <Odometer />
+          <Monitor />
         </el-icon>
         <span v-show="!isCollapsed" class="logo-text">BEMS 运营中枢</span>
       </div>
@@ -77,7 +77,7 @@
 import { ref, computed, onMounted, provide } from 'vue'
 import { useRoute } from 'vue-router'
 import {
-  DataLine, Search, Odometer,
+  DataLine, Search, Monitor,
   Timer, Fold, Expand
 } from '@element-plus/icons-vue'
 import GlobalAiAssistant from './components/GlobalAiAssistant.vue'
@@ -117,13 +117,20 @@ provide('callBemsAi', triggerAiWithContext)
 </script>
 
 <style>
-/* --- 全局样式与变量 --- */
+/* --- 高级黑曜石 (Premium Obsidian) 全局变量 --- */
 :root {
-  --bg-dark: #05050f;
-  --panel-bg: rgba(11, 9, 26, 0.6);
-  --accent-cyan: #00F0FF;
-  --accent-green: #00FF9D;
-  --border-color: #2A2946;
+  --bg-dark: #09090b;
+  /* 极深锌灰 */
+  --panel-bg: rgba(24, 24, 27, 0.65);
+  /* 沉稳的半透明面板 */
+  --accent-primary: #3b82f6;
+  /* 静谧蓝 */
+  --accent-green: #10b981;
+  /* 翠玉绿 */
+  --border-color: rgba(255, 255, 255, 0.08);
+  /* 极细磨砂边框 */
+  --text-main: #fafafa;
+  --text-muted: #a1a1aa;
 }
 
 body,
@@ -131,8 +138,8 @@ html {
   margin: 0;
   padding: 0;
   background-color: var(--bg-dark);
-  color: #fff;
-  font-family: 'Inter', 'PingFang SC', sans-serif;
+  color: var(--text-main);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
   overflow: hidden;
 }
 
@@ -143,50 +150,48 @@ html {
   position: relative;
 }
 
-/* --- 背景装饰 --- */
+/* --- 极简背景 --- */
 .bg-decoration {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   z-index: -1;
   overflow: hidden;
+  background: var(--bg-dark);
 }
 
 .glow-circle {
   position: absolute;
-  width: 600px;
-  height: 600px;
+  width: 800px;
+  height: 800px;
   border-radius: 50%;
-  filter: blur(120px);
-  opacity: 0.15;
+  filter: blur(150px);
+  opacity: 0.06;
 }
 
 .top-left {
-  top: -100px;
-  left: -100px;
-  background: var(--accent-cyan);
+  top: -200px;
+  left: -200px;
+  background: var(--accent-primary);
 }
 
 .bottom-right {
-  bottom: -100px;
-  right: -100px;
-  background: var(--accent-green);
+  bottom: -200px;
+  right: -200px;
+  background: #8b5cf6;
 }
 
 .grid-overlay {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   background-size: 40px 40px;
 }
 
-/* --- 侧边栏样式 --- */
+/* --- 高级侧边栏 --- */
 .sidebar-wrapper {
   width: 240px;
   background: var(--panel-bg);
-  backdrop-filter: blur(15px);
+  backdrop-filter: blur(20px);
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
@@ -196,7 +201,7 @@ html {
 }
 
 .sidebar-wrapper.collapsed {
-  width: 64px;
+  width: 72px;
 }
 
 .sidebar-logo {
@@ -209,11 +214,11 @@ html {
 }
 
 .logo-text {
-  font-size: 18px;
-  font-weight: 800;
-  color: var(--accent-cyan);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-main);
   white-space: nowrap;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
 }
 
 .side-menu {
@@ -221,23 +226,23 @@ html {
   flex: 1;
 }
 
-/* 深度定制 Element Menu 极客风 */
 .el-menu-item {
-  height: 56px !important;
-  margin: 4px 10px;
-  border-radius: 8px;
-  transition: all 0.3s;
+  height: 50px !important;
+  margin: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  color: var(--text-muted) !important;
 }
 
 .el-menu-item:hover {
-  background: rgba(0, 240, 255, 0.1) !important;
-  color: var(--accent-cyan) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: var(--text-main) !important;
 }
 
 .el-menu-item.is-active {
-  background: rgba(0, 240, 255, 0.15) !important;
-  border: 1px solid rgba(0, 240, 255, 0.3);
-  box-shadow: 0 0 15px rgba(0, 240, 255, 0.1);
+  background: rgba(59, 130, 246, 0.1) !important;
+  color: var(--accent-primary) !important;
+  font-weight: 600;
 }
 
 .collapse-trigger {
@@ -247,14 +252,16 @@ html {
   align-items: center;
   cursor: pointer;
   border-top: 1px solid var(--border-color);
-  color: #a0a2b8;
+  color: var(--text-muted);
+  transition: all 0.2s;
 }
 
 .collapse-trigger:hover {
-  color: var(--accent-cyan);
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.02);
 }
 
-/* --- 右侧内容区 --- */
+/* --- 顶栏内容区 --- */
 .main-container {
   flex: 1;
   display: flex;
@@ -269,25 +276,21 @@ html {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(5, 5, 15, 0.4);
-  backdrop-filter: blur(5px);
   border-bottom: 1px solid var(--border-color);
 }
 
 .breadcrumb-current {
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: bold;
-  font-size: 16px;
-  color: #e0e2f5;
-  letter-spacing: 1px;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text-main);
 }
 
 .header-right {
   display: flex;
   align-items: center;
   gap: 15px;
-  font-size: 14px;
-  color: #a0a2b8;
+  font-size: 13px;
+  color: var(--text-muted);
 }
 
 .system-time {
@@ -297,10 +300,10 @@ html {
 }
 
 .user-avatar {
-  background: linear-gradient(135deg, var(--accent-cyan), #0088ff);
-  font-weight: bold;
-  color: #000;
-  cursor: pointer;
+  background: #27272a;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  font-size: 12px;
 }
 
 .content-view {
@@ -310,27 +313,22 @@ html {
   box-sizing: border-box;
 }
 
-/* 页面切换动画 */
 .page-fade-enter-active,
 .page-fade-leave-active {
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .page-fade-enter-from {
   opacity: 0;
-  transform: translateX(15px);
+  transform: translateY(10px);
 }
 
 .page-fade-leave-to {
   opacity: 0;
-  transform: translateX(-15px);
+  transform: translateY(-10px);
 }
 
-/* =========================================
-   侧边栏收起状态下的图标居中 (Element Plus 专属优化)
-========================================= */
-
-/* 1. 收起时菜单项本身居中 */
+/* Element Plus 折叠修复 */
 .el-menu--collapse .el-menu-item {
   display: flex;
   justify-content: center;
@@ -338,7 +336,6 @@ html {
   padding: 0 !important;
 }
 
-/* 2. 🎯 核心修复：强行居中 Element Plus 自动生成的 tooltip 隐藏包裹层，并清除它的默认边距 */
 .el-menu--collapse .el-tooltip__trigger {
   display: flex !important;
   justify-content: center !important;
@@ -347,32 +344,8 @@ html {
   width: 100%;
 }
 
-/* 3. 图标微调，去偏移 */
 .el-menu--collapse .el-menu-item .el-icon {
   margin: 0 !important;
-  font-size: 22px;
-  /* 适当放大图标，显得更饱满 */
-}
-
-/* 4. 侧边栏收起时的宽度微调，让它更窄更精致 */
-.sidebar-wrapper.collapsed {
-  width: 72px;
-}
-
-/* 5. 修复折叠按钮的居中对齐 */
-.collapse-trigger {
-  height: 48px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  border-top: 1px solid var(--border-color);
-  color: #a0a2b8;
-  transition: color 0.3s, background-color 0.3s;
-}
-
-.collapse-trigger:hover {
-  color: var(--accent-cyan);
-  background-color: rgba(0, 240, 255, 0.05);
+  font-size: 20px;
 }
 </style>

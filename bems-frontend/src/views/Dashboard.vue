@@ -127,7 +127,7 @@
         <div class="card-header">
           <span class="header-title">📉 综合冷电负荷态势与智能监控</span>
           <el-tag v-if="enablePrediction" size="small" effect="dark" type="warning"
-            style="background: rgba(115, 89, 255, 0.2); border:1px solid #7359FF; color: #7359FF;">
+            style="background: rgba(115, 89, 255, 0.2); border:1px solid #8b5cf6; color: #8b5cf6;">
             Weka 随机森林在线推理中
           </el-tag>
         </div>
@@ -220,9 +220,9 @@ let radarChart = null
 let projectedParkElecCache = 1;
 
 const kpiData = reactive([
-  { title: '区间总耗电量', value: '0', unit: 'kWh', color: '#00F0FF', glowClass: 'cyan-glow', trend: 'up', desc: '基于动态区间测算' },
-  { title: '区间总冷负荷', value: '0', unit: 'kWh', color: '#7359FF', glowClass: 'purple-glow', trend: 'up', desc: '冷水当量转换值' },
-  { title: '全局冷量综合 COP', value: '0.00', unit: 'W/W', color: '#00FF9D', glowClass: 'green-glow', trend: 'up', desc: '宏观制冷能效评估' },
+  { title: '区间总耗电量', value: '0', unit: 'kWh', color: '#3b82f6', glowClass: 'cyan-glow', trend: 'up', desc: '基于动态区间测算' },
+  { title: '区间总冷负荷', value: '0', unit: 'kWh', color: '#8b5cf6', glowClass: 'purple-glow', trend: 'up', desc: '冷水当量转换值' },
+  { title: '全局冷量综合 COP', value: '0.00', unit: 'W/W', color: '#10b981', glowClass: 'green-glow', trend: 'up', desc: '宏观制冷能效评估' },
   { title: '活跃异常告警', value: '0', unit: '次', color: '#FF4D4F', glowClass: 'red-glow', trend: 'alert', desc: '亟需人工辅助诊断' }
 ])
 
@@ -343,7 +343,7 @@ const updateSunburstChart = (baseElec, baseWater) => {
   const parkWater = baseWater * 4.5;
   projectedParkElecCache = parkElec;
 
-  const colors = { education: '#00F0FF', office: '#7359FF', service: '#00FF9D', dorm: '#FFB800' }
+  const colors = { education: '#3b82f6', office: '#8b5cf6', service: '#10b981', dorm: '#FFB800' }
 
   pieChart.setOption({
     series: [{
@@ -377,7 +377,7 @@ const getEnergyBarStyle = (cell) => {
   const val = calendarMap.value[dateStr]
   if (!val) return {}
   const ratio = val / maxElecOfDay
-  let color = '#00F0FF'
+  let color = '#3b82f6'
   if (ratio > 0.75) color = '#FF4D4F'
   else if (ratio > 0.4) color = '#FAAD14'
   return { width: `${Math.max(ratio * 100, 15)}%`, backgroundColor: color, boxShadow: `0 0 6px ${color}` }
@@ -554,19 +554,19 @@ const fetchDataAndRender = async () => {
       if (enablePrediction.value) legendData.push('耗电量 (AI预测)')
 
       yAxisConfig.push({
-        type: 'value', name: '电耗', position: 'left', nameTextStyle: { color: '#00F0FF' },
-        splitLine: { lineStyle: { color: '#1f1d36', type: 'dashed' } }, axisLabel: { color: '#00F0FF' }
+        type: 'value', name: '电耗', position: 'left', nameTextStyle: { color: '#3b82f6' },
+        splitLine: { lineStyle: { color: '#1f1d36', type: 'dashed' } }, axisLabel: { color: '#3b82f6' }
       })
 
       // 实体线：历史数据
       seriesConfig.push({
         name: '耗电量 (实测)', type: 'line', yAxisIndex: yAxisConfig.length - 1, smooth: true, data: elecData,
-        lineStyle: { color: '#00F0FF', width: 3 },
+        lineStyle: { color: '#3b82f6', width: 3 },
         areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(0,240,255,0.4)' }, { offset: 1, color: 'rgba(0,240,255,0)' }]) },
         markPoint: { symbol: 'pin', symbolSize: 50, label: { color: '#fff', fontSize: 10 }, data: abnormalPoints },
         markLine: enablePrediction.value ? {
-          silent: true, data: [{ xAxis: xData[records.length - 1], label: { formatter: '现在', color: '#7359FF' } }],
-          lineStyle: { color: '#7359FF', type: 'dashed', width: 2 }
+          silent: true, data: [{ xAxis: xData[records.length - 1], label: { formatter: '现在', color: '#8b5cf6' } }],
+          lineStyle: { color: '#8b5cf6', type: 'dashed', width: 2 }
         } : null,
         animationDuration: 1500
       })
@@ -575,7 +575,7 @@ const fetchDataAndRender = async () => {
       if (enablePrediction.value) {
         seriesConfig.push({
           name: '耗电量 (AI预测)', type: 'line', yAxisIndex: yAxisConfig.length - 1, smooth: true, data: predElecData,
-          lineStyle: { color: '#7359FF', width: 3, type: 'dashed' }, symbol: 'none'
+          lineStyle: { color: '#8b5cf6', width: 3, type: 'dashed' }, symbol: 'none'
         });
         seriesConfig.push({
           name: '电量下限支撑', type: 'line', yAxisIndex: yAxisConfig.length - 1, smooth: true, data: lowerBoundData,
@@ -595,21 +595,21 @@ const fetchDataAndRender = async () => {
       if (enablePrediction.value) legendData.push('冷负荷 (AI预测)')
 
       yAxisConfig.push({
-        type: 'value', name: '冷量', position: 'right', nameTextStyle: { color: '#00FF9D' },
-        splitLine: { show: false }, axisLabel: { color: '#00FF9D' }
+        type: 'value', name: '冷量', position: 'right', nameTextStyle: { color: '#10b981' },
+        splitLine: { show: false }, axisLabel: { color: '#10b981' }
       })
 
       // 实线
       seriesConfig.push({
         name: '冷负荷 (实测)', type: 'line', yAxisIndex: yAxisConfig.length - 1, smooth: true, data: waterData,
-        lineStyle: { color: '#00FF9D', width: 2 }
+        lineStyle: { color: '#10b981', width: 2 }
       })
 
       // 🚀 虚线与阴影
       if (enablePrediction.value) {
         seriesConfig.push({
           name: '冷负荷 (AI预测)', type: 'line', yAxisIndex: yAxisConfig.length - 1, smooth: true, data: predWaterData,
-          lineStyle: { color: '#00FF9D', width: 2, type: 'dashed' }, symbol: 'none'
+          lineStyle: { color: '#10b981', width: 2, type: 'dashed' }, symbol: 'none'
         });
         seriesConfig.push({
           name: '冷量下限支撑', type: 'line', yAxisIndex: yAxisConfig.length - 1, smooth: true, data: lowerBoundWaterData,
@@ -662,7 +662,7 @@ const updateRadarChart = (baseCop) => {
   ]
 
   radarChart.setOption({
-    color: ['#00F0FF', '#00FF9D'],
+    color: ['#3b82f6', '#10b981'],
     tooltip: { trigger: 'item', backgroundColor: 'rgba(11, 9, 26, 0.8)', textStyle: { color: '#fff' }, borderColor: '#2A2946' },
     legend: { data: ['当前实时 COP', '设计基准 COP'], bottom: 0, textStyle: { color: '#a0a2b8' } },
     radar: {
@@ -678,7 +678,7 @@ const updateRadarChart = (baseCop) => {
     series: [{
       name: '能效比对比', type: 'radar', animationType: 'scale', animationDuration: 2500, animationEasing: 'elasticOut',
       data: [
-        { value: currentValues, name: '当前实时 COP', areaStyle: { color: 'rgba(0, 240, 255, 0.3)' }, lineStyle: { width: 2, shadowBlur: 10, shadowColor: '#00F0FF' } },
+        { value: currentValues, name: '当前实时 COP', areaStyle: { color: 'rgba(0, 240, 255, 0.3)' }, lineStyle: { width: 2, shadowBlur: 10, shadowColor: '#3b82f6' } },
         { value: [5.5, 3.0, 2.8, 4.5, 2.0], name: '设计基准 COP', areaStyle: { color: 'rgba(0, 255, 157, 0.1)' }, lineStyle: { type: 'dashed', width: 2 } }
       ]
     }]
@@ -714,65 +714,43 @@ onUnmounted(() => {
   gap: 20px;
   padding-bottom: 40px;
   box-sizing: border-box;
-
-  /* 🚀 核心修改：强制设为 0，确保内容顶格 */
   padding-top: 0 !important;
 }
 
+/* 高级便当盒卡片 */
 .bento-panel,
 .bento-card {
-  background: rgba(11, 9, 26, 0.6);
-  backdrop-filter: blur(15px);
-  border: 1px solid #2A2946;
+  background: var(--panel-bg);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-  transition: transform 0.3s, border-color 0.3s;
+  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
+  transition: border-color 0.3s;
 }
 
 .bento-card:hover {
-  border-color: rgba(0, 240, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
-/* 🚀 修复版：悬浮岛式吸顶中控台 */
+/* 悬浮岛吸顶栏 */
 .global-control {
-  /* 1. 保持你最满意的内部舒适布局 */
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 16px 24px;
-  /* 稍微加深内边距，让内部更显大气 */
   flex-wrap: wrap;
   gap: 15px;
-
-  /* 2. 🚀 核心突破：利用负边距“吃掉”外层的空隙 */
   position: sticky;
   top: -20px;
   z-index: 2000;
-
-  /* 假设外层 padding 是 20px，我们通过负值顶上去 */
   margin: -20px -20px 24px -20px;
   width: calc(100% + 40px);
-  /* 补偿负边距带来的宽度缩减 */
-
-  /* 3. 视觉造型：顶部平齐，底部圆角 */
   border-radius: 0 0 16px 16px;
-  /* 顶部 0 圆角实现贴合，底部保留大圆角增强设计感 */
-
-  /* 4. 赛博朋克深海滤镜 */
-  background: rgba(11, 9, 26, 0.88) !important;
+  background: rgba(9, 9, 11, 0.85) !important;
   backdrop-filter: blur(20px) saturate(150%);
-  border-bottom: 2px solid rgba(115, 89, 255, 0.5);
-  /* 强化底部发光分割线 */
-
-  /* 阴影向下延伸 */
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
-}
-
-/* 悬停时稍微加深紫色流光 */
-.global-control:hover {
-  border-bottom-color: #00F0FF;
-  box-shadow: 0 10px 40px rgba(0, 240, 255, 0.15);
 }
 
 .control-left {
@@ -788,11 +766,10 @@ onUnmounted(() => {
 }
 
 .control-label {
-  color: #a0a2b8;
+  color: var(--text-muted);
   margin-right: 10px;
-  font-weight: bold;
-  white-space: nowrap;
-  flex-shrink: 0;
+  font-weight: 500;
+  font-size: 13px;
 }
 
 .building-select {
@@ -802,88 +779,79 @@ onUnmounted(() => {
 .inline-status {
   display: flex;
   align-items: center;
-  color: #a0a2b8;
-  font-size: 14px;
-  white-space: nowrap;
-
-  /* 在日期选择器和这段文字之间划一条紫色的分割线 */
+  color: var(--text-muted);
+  font-size: 13px;
   margin-left: 20px;
   padding-left: 20px;
-  border-left: 1px solid rgba(115, 89, 255, 0.4);
+  border-left: 1px solid var(--border-color);
 }
 
 .data-date {
-  color: #00FF9D;
-  font-weight: bold;
-  font-size: 16px;
+  color: var(--text-main);
+  font-weight: 600;
+  font-size: 14px;
   margin-left: 5px;
-  letter-spacing: 1px;
 }
 
+/* 控件覆写 */
 :deep(.el-radio-button__inner) {
   background-color: transparent;
-  border-color: #2A2946;
-  color: #a0a2b8;
+  border-color: var(--border-color);
+  color: var(--text-muted);
 }
 
 :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
-  background-color: #0b091a;
-  color: #00F0FF;
-  border-color: #00F0FF;
-  box-shadow: -1px 0 0 0 #00F0FF;
+  background-color: #27272a;
+  color: var(--text-main);
+  border-color: #3f3f46;
+  box-shadow: -1px 0 0 0 #3f3f46;
 }
 
 :deep(.cyber-checkbox-group .el-checkbox__input.is-checked .el-checkbox__inner) {
-  background-color: #00F0FF;
-  border-color: #00F0FF;
+  background-color: var(--accent-primary);
+  border-color: var(--accent-primary);
 }
 
 :deep(.cyber-checkbox-group .el-checkbox__input.is-checked + .el-checkbox__label) {
-  color: #00F0FF;
-  font-weight: bold;
-  text-shadow: 0 0 5px rgba(0, 240, 255, 0.4);
+  color: var(--text-main);
+  font-weight: 500;
+  text-shadow: none;
 }
 
 :deep(.cyber-checkbox-group .el-checkbox) {
   margin-right: 15px;
 }
 
-/* 🚀 预测开关专属赛博朋克深紫配色 */
 :deep(.ai-predict-switch .el-switch__core) {
-  border-color: #2A2946;
-  background-color: #1f1d36;
+  border-color: var(--border-color);
+  background-color: #27272a;
 }
 
 :deep(.ai-predict-switch.is-checked .el-switch__core) {
-  border-color: #7359FF;
-  background-color: rgba(115, 89, 255, 0.8);
-  box-shadow: 0 0 10px rgba(115, 89, 255, 0.5);
+  background-color: var(--accent-primary);
+  border-color: var(--accent-primary);
 }
 
 :deep(.ai-predict-switch .el-switch__label) {
-  color: #a0a2b8;
+  color: var(--text-muted);
 }
 
 :deep(.ai-predict-switch.is-checked .el-switch__label) {
-  color: #7359FF;
-  font-weight: bold;
-  text-shadow: 0 0 5px rgba(115, 89, 255, 0.3);
-}
-
-.date-navigator {
-  display: flex;
-  align-items: center;
+  color: var(--accent-primary);
+  font-weight: 600;
+  text-shadow: none;
 }
 
 .date-navigator :deep(.el-button) {
   background-color: transparent;
-  border-color: #2A2946;
-  color: #a0a2b8;
+  border-color: var(--border-color);
+  color: var(--text-muted);
 }
 
 .date-navigator :deep(.el-button:hover) {
-  color: #00F0FF;
-  border-color: #00F0FF;
+  color: var(--text-main);
+  border-color: #52525b;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .date-picker-custom {
@@ -892,21 +860,18 @@ onUnmounted(() => {
 }
 
 :deep(.el-input__wrapper) {
-  background-color: #0b091a !important;
-  box-shadow: 0 0 0 1px #2A2946 inset !important;
-  border-radius: 0;
+  background-color: #18181b !important;
+  box-shadow: 0 0 0 1px var(--border-color) inset !important;
+  border-radius: 6px;
 }
 
 :deep(.el-input__inner) {
-  color: #00F0FF !important;
-  font-weight: bold;
+  color: var(--text-main) !important;
+  font-weight: 500;
   text-align: center;
 }
 
-:deep(.el-picker-panel__body) {
-  padding: 10px;
-}
-
+/* 日历热力图 */
 .custom-calendar-cell {
   position: relative;
   width: 100%;
@@ -919,26 +884,23 @@ onUnmounted(() => {
 
 .cell-text {
   z-index: 10;
-  font-weight: bold;
+  font-weight: 500;
+  font-size: 13px;
 }
 
 .energy-bar {
   position: absolute;
-  bottom: 2px;
+  bottom: 4px;
   height: 3px;
   border-radius: 2px;
   transition: all 0.3s ease;
 }
 
-.custom-calendar-cell:hover .energy-bar {
-  height: 5px;
-}
-
 .is-disabled .cell-text {
-  color: #4a4a5e;
-  font-weight: normal;
+  color: #52525b;
 }
 
+/* KPI 卡片 */
 .kpi-section {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -946,70 +908,75 @@ onUnmounted(() => {
 }
 
 .kpi-card {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
+  padding: 24px;
 }
 
 .kpi-title {
-  color: #a0a2b8;
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 10px;
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
 }
 
 .kpi-value {
-  font-size: 32px;
-  font-weight: bold;
-  font-family: 'JetBrains Mono', monospace;
-  margin-bottom: 15px;
+  font-size: 36px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  margin-bottom: 8px;
+  letter-spacing: -1px;
 }
 
 .kpi-value .unit {
   font-size: 14px;
-  color: #a0a2b8;
-  margin-left: 5px;
+  color: var(--text-muted);
+  margin-left: 4px;
+  font-weight: 400;
+  letter-spacing: 0;
 }
 
+/* 取消所有的霓虹发光，替换为高级质感色 */
 .cyan-glow {
-  color: #00F0FF;
-  text-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+  color: var(--text-main);
+  text-shadow: none;
 }
 
 .purple-glow {
-  color: #7359FF;
-  text-shadow: 0 0 15px rgba(115, 89, 255, 0.4);
+  color: var(--text-main);
+  text-shadow: none;
 }
 
 .green-glow {
-  color: #00FF9D;
-  text-shadow: 0 0 15px rgba(0, 255, 157, 0.4);
+  color: var(--text-main);
+  text-shadow: none;
 }
 
 .red-glow {
-  color: #FF4D4F;
-  text-shadow: 0 0 15px rgba(255, 77, 79, 0.4);
+  color: var(--text-main);
+  text-shadow: none;
 }
 
 .kpi-trend {
-  font-size: 13px;
+  font-size: 12px;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
+  color: var(--text-muted);
 }
 
 .trend-up {
-  color: #00FF9D;
+  color: var(--accent-green);
 }
 
 .trend-down {
-  color: #00F0FF;
+  color: var(--accent-primary);
 }
 
 .trend-alert {
-  color: #FF4D4F;
+  color: #ef4444;
 }
 
+/* 图表区域 */
 .main-grid {
   display: grid;
   grid-template-columns: 1.3fr 1fr;
@@ -1020,37 +987,26 @@ onUnmounted(() => {
 }
 
 .chart-card {
-  padding: 15px 20px;
-  display: flex;
-  flex-direction: column;
+  padding: 20px;
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
 .header-title {
-  color: #e0e2f5;
-  font-size: 16px;
-  font-weight: bold;
-  letter-spacing: 1px;
+  color: var(--text-main);
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .chart-box {
   flex: 1;
   width: 100%;
   min-height: 250px;
-}
-
-.pie-box {
-  min-height: 200px;
-}
-
-.radar-box {
-  min-height: 200px;
 }
 
 .line-chart-area {
@@ -1061,7 +1017,7 @@ onUnmounted(() => {
 .alarm-card {
   grid-column: 2 / 3;
   grid-row: 1 / 2;
-  padding: 15px 20px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
 }
@@ -1076,13 +1032,14 @@ onUnmounted(() => {
   grid-row: 2 / 3;
 }
 
+/* 告警列表精修 */
 .alarm-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   overflow-y: auto;
   flex: 1;
-  padding-right: 5px;
+  padding-right: 8px;
 }
 
 .alarm-list::-webkit-scrollbar {
@@ -1090,75 +1047,48 @@ onUnmounted(() => {
 }
 
 .alarm-list::-webkit-scrollbar-thumb {
-  background: #2A2946;
+  background: #3f3f46;
   border-radius: 2px;
 }
 
 .alarm-item {
   display: flex;
   align-items: center;
-  padding: 12px 15px;
-  background: rgba(5, 5, 15, 0.4);
-  border: 1px solid #1f1d36;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   gap: 12px;
-  transition: all 0.3s;
+  transition: all 0.2s;
 }
 
 .alarm-item:hover {
-  background: rgba(0, 240, 255, 0.05);
-  border-color: rgba(0, 240, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .alarm-status {
-  width: 16px;
+  width: 12px;
   display: flex;
   justify-content: center;
 }
 
 .status-light {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
 }
 
 .critical {
-  background-color: #FF4D4F;
-  animation: breathe-fast 1s infinite alternate;
+  background-color: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
 }
 
 .warning {
-  background-color: #FAAD14;
-  animation: breathe-slow 2s infinite alternate;
+  background-color: #f59e0b;
 }
 
 .offline {
-  background-color: #5C5C5C;
-}
-
-@keyframes breathe-fast {
-  0% {
-    opacity: 0.3;
-    transform: scale(0.8);
-  }
-
-  100% {
-    opacity: 1;
-    transform: scale(1.3);
-    box-shadow: 0 0 15px #FF4D4F;
-  }
-}
-
-@keyframes breathe-slow {
-  0% {
-    opacity: 0.4;
-  }
-
-  100% {
-    opacity: 1;
-    transform: scale(1.1);
-    box-shadow: 0 0 15px #FAAD14;
-  }
+  background-color: #71717a;
 }
 
 .alarm-info {
@@ -1167,77 +1097,72 @@ onUnmounted(() => {
 
 .alarm-time {
   font-size: 12px;
-  color: #8c8c8c;
+  color: var(--text-muted);
   margin-bottom: 4px;
 }
 
 .alarm-desc {
   font-size: 13px;
-  color: #e0e2f5;
-  line-height: 1.4;
+  color: var(--text-main);
+  line-height: 1.5;
 }
 
 .cyber-btn-small {
-  background: transparent;
-  border: 1px solid #00F0FF;
-  color: #00F0FF;
+  background: #27272a;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
   font-size: 12px;
-  border-radius: 4px;
-  padding: 5px 10px;
-  transition: all 0.3s;
+  border-radius: 6px;
+  padding: 6px 12px;
+  transition: all 0.2s;
 }
 
 .cyber-btn-small:hover {
-  background: rgba(0, 240, 255, 0.1);
-  box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
-  color: #fff;
+  background: #3f3f46;
+  border-color: #52525b;
   cursor: pointer;
 }
 
-.list-anim-move {
-  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
+/* 动画和指示器 */
+.list-anim-move,
 .list-anim-enter-active {
-  transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .list-anim-leave-active {
-  transition: all 0.5s ease-in;
+  transition: all 0.3s ease;
   position: absolute;
   width: 100%;
 }
 
 .list-anim-enter-from {
   opacity: 0;
-  transform: translateY(-40px) scale(0.9);
-  filter: blur(5px);
+  transform: translateY(-10px);
 }
 
 .list-anim-leave-to {
   opacity: 0;
-  transform: translateX(50px);
+  transform: translateX(20px);
 }
 
 .live-indicator {
   font-size: 12px;
-  color: #00FF9D;
+  color: var(--accent-green);
   display: flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid rgba(0, 255, 157, 0.3);
-  padding: 3px 8px;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 4px 10px;
   border-radius: 12px;
-  background: rgba(0, 255, 157, 0.05);
+  font-weight: 500;
 }
 
 .live-indicator .dot {
   width: 6px;
   height: 6px;
-  background-color: #00FF9D;
+  background-color: var(--accent-green);
   border-radius: 50%;
-  box-shadow: 0 0 8px #00FF9D;
-  animation: blink-dot 1.5s infinite;
+  animation: blink-dot 2s infinite;
 }
 
 @keyframes blink-dot {
@@ -1245,143 +1170,86 @@ onUnmounted(() => {
   0%,
   100% {
     opacity: 1;
-    transform: scale(1);
   }
 
   50% {
-    opacity: 0.3;
-    transform: scale(0.8);
+    opacity: 0.4;
   }
 }
 
-/* ================= 🚀 COP 科普悬浮窗专属样式 ================= */
+/* COP 科普悬浮 */
 .help-icon {
   margin-left: 6px;
   cursor: pointer;
-  color: #7359FF;
-  vertical-align: middle;
-  transition: all 0.3s;
+  color: var(--text-muted);
+  transition: color 0.2s;
 }
 
 .help-icon:hover {
-  color: #00F0FF;
-  filter: drop-shadow(0 0 5px #00F0FF);
-  transform: scale(1.1);
-}
-
-:deep(.el-popper.cyber-popover) {
-  background: rgba(11, 9, 26, 0.9) !important;
-  backdrop-filter: blur(15px) !important;
-  border: 1px solid rgba(115, 89, 255, 0.6) !important;
-  box-shadow: 0 0 25px rgba(0, 0, 0, 0.8), 0 0 15px rgba(115, 89, 255, 0.3) !important;
-  color: #e0e2f5 !important;
-  border-radius: 8px !important;
-  z-index: 9999 !important;
-  /* 强制提升到最顶层 */
-}
-
-/* 修正小箭头颜色，防止出现白色刺眼三角形 */
-:deep(.cyber-popover .el-popper__arrow::before) {
-  background: rgba(11, 9, 26, 1) !important;
-  border: 1px solid rgba(115, 89, 255, 0.6) !important;
-}
-
-.cop-explainer {
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.explainer-title {
-  font-weight: bold;
-  color: #00F0FF;
-  margin-bottom: 10px;
-  border-bottom: 1px dashed rgba(115, 89, 255, 0.4);
-  padding-bottom: 6px;
-  letter-spacing: 1px;
-}
-
-.explainer-formula {
-  font-family: 'JetBrains Mono', monospace;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  margin-bottom: 12px;
-  text-align: center;
-  font-size: 14px;
-  line-height: 1.8;
-}
-
-.hl-green {
-  color: #00FF9D;
-  font-weight: bold;
-  text-shadow: 0 0 5px rgba(0, 255, 157, 0.4);
-}
-
-.hl-cyan {
-  color: #00F0FF;
-  font-weight: bold;
-  text-shadow: 0 0 5px rgba(0, 240, 255, 0.4);
-}
-
-.hl-purple {
-  color: #7359FF;
-  font-weight: bold;
-  text-shadow: 0 0 5px rgba(115, 89, 255, 0.4);
-}
-
-.hl-orange {
-  color: #FAAD14;
-  font-weight: bold;
-  text-shadow: 0 0 5px rgba(250, 173, 20, 0.4);
-}
-
-.explainer-text {
-  color: #a0a2b8;
-}
-
-.explainer-text b {
-  color: #fff;
+  color: var(--text-main);
 }
 </style>
 
 <style>
-/* 针对全局赛博朋克弹出框的深度定制 */
+/* 全局弹窗高级定制 */
 .el-popper.cyber-popover {
-  background: rgba(16, 14, 35, 0.95) !important;
-  /* 更深邃的背景色 */
+  background: rgba(24, 24, 27, 0.85) !important;
   backdrop-filter: blur(20px) !important;
-  border: 1px solid #7359FF !important;
-  /* 紫色发光边框 */
-  box-shadow: 0 0 20px rgba(115, 89, 255, 0.4) !important;
-  color: #e0e2f5 !important;
-  border-radius: 8px !important;
-  padding: 15px !important;
-  z-index: 10000 !important;
-  /* 确保在最上层 */
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4) !important;
+  color: #fafafa !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
 }
 
-/* 修正弹出框的小三角箭头颜色，防止它变白 */
 .el-popper.cyber-popover .el-popper__arrow::before {
-  background: rgba(16, 14, 35, 1) !important;
-  border: 1px solid #7359FF !important;
-  visibility: visible;
+  background: #18181b !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-/* 弹出框内部的文字细节优化 */
 .cyber-popover .explainer-title {
-  color: #00F0FF !important;
-  font-weight: bold;
-  margin-bottom: 8px;
-  border-bottom: 1px dashed rgba(115, 89, 255, 0.5);
+  color: #fafafa !important;
+  font-weight: 600;
+  margin-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 8px;
+  font-size: 14px;
 }
 
 .cyber-popover .explainer-formula {
-  background: rgba(0, 0, 0, 0.5) !important;
-  color: #fff !important;
-  border-radius: 4px;
-  margin: 10px 0;
-  padding: 8px;
+  background: rgba(0, 0, 0, 0.3) !important;
+  color: #e4e4e7 !important;
+  border-radius: 6px;
+  margin: 12px 0;
+  padding: 12px;
   font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cyber-popover .hl-green {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.cyber-popover .hl-cyan {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.cyber-popover .hl-purple {
+  color: #a855f7;
+  font-weight: 600;
+}
+
+.cyber-popover .hl-orange {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.cyber-popover .explainer-text {
+  color: #a1a1aa;
+  font-size: 12px;
+  line-height: 1.6;
 }
 </style>

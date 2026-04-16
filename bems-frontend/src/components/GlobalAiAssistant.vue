@@ -317,82 +317,69 @@ watch(visible, (newVal) => { if (!newVal) stopGeneration() });
     z-index: 9999;
 }
 
+/* 高级感悬浮球 */
 .floating-btn {
     position: fixed;
     right: 40px;
     bottom: 40px;
-    width: 60px;
-    height: 60px;
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #0b091a, #1f1d36);
-    border: 2px solid #00F0FF;
+    background: rgba(24, 24, 27, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     display: flex;
     justify-content: center;
     align-items: center;
-    color: #00F0FF;
+    color: #fafafa;
     cursor: pointer;
-    box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
-    transition: all 0.3s ease;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s;
 }
 
 .floating-btn:hover {
-    transform: scale(1.1);
-    box-shadow: 0 0 25px rgba(0, 240, 255, 0.6);
+    transform: scale(1.08);
+    background: #27272a;
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
-.pulse-glow {
-    animation: glow 2s infinite alternate;
-}
-
-@keyframes glow {
-    from {
-        box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
-    }
-
-    to {
-        box-shadow: 0 0 20px rgba(0, 240, 255, 0.6), 0 0 10px rgba(0, 255, 157, 0.4);
-    }
-}
-
+/* 高级感对话面板 */
 .floating-chat-panel {
     position: fixed;
-    width: 420px;
-    height: 65vh;
-    min-height: 500px;
-    background-color: rgba(11, 9, 26, 0.85);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid #2A2946;
-    border-radius: 12px;
+    width: 400px;
+    height: 60vh;
+    min-height: 480px;
+    background-color: rgba(24, 24, 27, 0.75);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 240, 255, 0.15);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
     overflow: hidden;
 }
 
-/* 🚀 优化 2：设置缩放原点居中，让弹出显得更稳 */
 .pop-up-enter-active,
 .pop-up-leave-active {
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
     transform-origin: center center;
 }
 
-/* 🚀 核心修复：删除了 translateY(20px)，杜绝下方弹出时的巨大空隙 */
 .pop-up-enter-from,
 .pop-up-leave-to {
     opacity: 0;
     transform: scale(0.95);
-    /* 改为纯缩放淡入，不论上下方弹出都保持绝对对称 */
     pointer-events: none;
 }
 
 .panel-header {
-    padding: 15px 20px;
-    background-color: rgba(5, 5, 15, 0.6);
-    border-bottom: 1px solid #2A2946;
-    color: #00F0FF;
-    font-weight: bold;
-    font-size: 15px;
+    padding: 16px 20px;
+    background-color: rgba(9, 9, 11, 0.5);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: #fafafa;
+    font-weight: 600;
+    font-size: 14px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -411,13 +398,12 @@ watch(visible, (newVal) => { if (!newVal) stopGeneration() });
 }
 
 .close-btn {
-    color: #a0a2b8;
-    transition: color 0.3s;
+    color: #a1a1aa;
+    transition: color 0.2s;
 }
 
 .close-btn:hover {
-    color: #FF4D4F;
-    transform: rotate(90deg);
+    color: #ef4444;
 }
 
 .chat-panel {
@@ -433,22 +419,23 @@ watch(visible, (newVal) => { if (!newVal) stopGeneration() });
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 24px;
 }
 
 .chat-history::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
 }
 
 .chat-history::-webkit-scrollbar-thumb {
-    background: #2A2946;
-    border-radius: 3px;
+    background: #3f3f46;
+    border-radius: 2px;
 }
 
+/* 聊天气泡 (Apple iMessage 风格变体) */
 .message-wrapper {
     display: flex;
     gap: 12px;
-    max-width: 92%;
+    max-width: 90%;
 }
 
 .is-user {
@@ -461,122 +448,130 @@ watch(visible, (newVal) => { if (!newVal) stopGeneration() });
 }
 
 .avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
-    font-size: 12px;
-    border: 1px solid;
+    font-weight: 600;
+    font-size: 11px;
     flex-shrink: 0;
 }
 
 .is-user .avatar {
-    background: rgba(0, 255, 157, 0.1);
-    color: #00FF9D;
-    border-color: #00FF9D;
+    background: #3b82f6;
+    color: #fff;
 }
 
 .is-ai .avatar {
-    background: rgba(0, 240, 255, 0.1);
-    color: #00F0FF;
-    border-color: #00F0FF;
+    background: #27272a;
+    color: #fafafa;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .message-bubble {
-    padding: 10px 14px;
-    border-radius: 8px;
-    line-height: 1.6;
-    font-size: 13px;
+    padding: 12px 16px;
+    border-radius: 18px;
+    line-height: 1.5;
+    font-size: 14px;
     position: relative;
-    word-break: break-all;
+    word-break: break-word;
 }
 
 .is-user .message-bubble {
-    background: linear-gradient(135deg, #00FF9D, #00cc7e);
-    color: #000;
-    border-top-right-radius: 0;
-    font-weight: 500;
+    background: #3b82f6;
+    color: #fff;
+    border-bottom-right-radius: 4px;
 }
 
 .is-ai .message-bubble {
-    background: rgba(30, 28, 48, 0.7);
-    border: 1px solid #2A2946;
-    color: #E0E2F5;
-    border-top-left-radius: 0;
+    background: rgba(39, 39, 42, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    color: #e4e4e7;
+    border-bottom-left-radius: 4px;
 }
 
 .cursor {
     display: inline-block;
-    width: 6px;
+    width: 2px;
     height: 14px;
-    background-color: #00F0FF;
+    background-color: #fafafa;
     margin-left: 2px;
     vertical-align: middle;
     animation: blink 1s step-end infinite;
 }
 
+@keyframes blink {
+    50% {
+        opacity: 0;
+    }
+}
+
+/* 输入区 */
 .input-area {
-    padding: 15px;
-    background-color: rgba(5, 5, 15, 0.8);
-    border-top: 1px solid #2A2946;
+    padding: 16px;
+    background-color: rgba(9, 9, 11, 0.8);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
     gap: 10px;
     align-items: flex-end;
 }
 
 :deep(.cyber-textarea .el-textarea__inner) {
-    background-color: rgba(5, 5, 15, 0.5) !important;
-    box-shadow: 0 0 0 1px #2A2946 inset !important;
-    color: #00F0FF !important;
-    border-radius: 6px;
-    font-family: monospace;
+    background-color: #18181b !important;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) inset !important;
+    color: #fafafa !important;
+    border-radius: 12px;
+    padding: 10px 14px;
     resize: none;
+    font-family: inherit;
 }
 
 :deep(.cyber-textarea .el-textarea__inner:focus) {
-    box-shadow: 0 0 0 1px #00F0FF inset !important;
+    box-shadow: 0 0 0 1px #3b82f6 inset !important;
 }
 
 .cyber-btn {
-    background-color: transparent;
-    border: 1px solid #00F0FF;
-    height: 52px;
-    width: 52px;
-    border-radius: 6px;
+    background-color: #27272a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    height: 44px;
+    width: 44px;
+    border-radius: 50%;
     padding: 0;
     display: flex;
     justify-content: center;
     align-items: center;
+    transition: all 0.2s;
 }
 
 .send-btn {
-    color: #00F0FF;
+    color: #fafafa;
 }
 
 .send-btn:hover {
-    background-color: rgba(0, 240, 255, 0.1);
-    box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+    background-color: #3b82f6;
+    border-color: #3b82f6;
 }
 
 .stop-btn {
-    border: 1px solid #FF4D4F;
-    color: #FF4D4F;
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #ef4444;
 }
 
 .stop-btn:hover {
-    background-color: rgba(255, 77, 79, 0.1);
-    box-shadow: 0 0 15px rgba(255, 77, 79, 0.4);
+    background-color: #ef4444;
+    color: #fff;
 }
 
+/* Markdown 覆写 */
 :deep(.markdown-body) {
-    color: #E0E2F5;
+    color: inherit;
+    font-size: 14px;
 }
 
 :deep(.markdown-body p) {
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     margin-top: 0;
 }
 
@@ -585,6 +580,7 @@ watch(visible, (newVal) => { if (!newVal) stopGeneration() });
 }
 
 :deep(.markdown-body strong) {
-    color: #00F0FF;
+    font-weight: 600;
+    color: #fff;
 }
 </style>
