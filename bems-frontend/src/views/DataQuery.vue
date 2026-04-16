@@ -570,22 +570,20 @@ onMounted(() => {
   flex-direction: column;
 }
 
-/* 🚀 极致磨砂：控制面板 */
+/* 过滤面板 */
 .filter-panel {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 20px;
-  background: rgba(22, 22, 26, 0.45);
+  background: var(--bems-glass-card);
   backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--bems-border-base);
   border-radius: 20px;
   padding: 24px 32px;
-  /* 加大呼吸感 */
   margin-bottom: 24px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 12px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 1px 0 var(--bems-rim-light), var(--bems-shadow-ambient);
 }
 
 .filter-left {
@@ -601,14 +599,14 @@ onMounted(() => {
 }
 
 .filter-label {
-  color: #71717a;
+  color: var(--bems-text-secondary);
   margin-right: 14px;
   font-weight: 500;
   font-size: 13px;
   white-space: nowrap;
 }
 
-/* 控件深层覆写 */
+/* 控件覆写 */
 .custom-select,
 .custom-date-range {
   width: 240px;
@@ -616,26 +614,26 @@ onMounted(() => {
 
 :deep(.el-input__wrapper),
 :deep(.el-range-editor.el-input__wrapper) {
-  background: rgba(0, 0, 0, 0.3) !important;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset !important;
+  background: var(--bems-glass-input) !important;
+  box-shadow: 0 0 0 1px var(--bems-border-base) inset !important;
   border-radius: 10px;
 }
 
 :deep(.el-input__inner),
 :deep(.el-range-input) {
-  color: #f4f4f5 !important;
+  color: var(--bems-text-primary) !important;
   font-weight: 500;
 }
 
 :deep(.el-range-separator) {
-  color: #71717a;
+  color: var(--bems-text-secondary);
 }
 
 /* 按钮组 */
 .cyber-btn {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #f4f4f5;
+  background: var(--bems-glass-input);
+  border: 1px solid var(--bems-border-base);
+  color: var(--bems-text-primary);
   font-weight: 500;
   border-radius: 10px;
   padding: 0 20px;
@@ -644,7 +642,7 @@ onMounted(() => {
 }
 
 .search-btn {
-  background: #3b82f6;
+  background: var(--bems-color-primary);
   color: #fff;
   border: none;
 }
@@ -657,47 +655,37 @@ onMounted(() => {
 
 .export-btn:hover,
 .upload-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: var(--bems-hover-overlay);
+  border-color: var(--bems-border-light);
 }
 
-/* 🚀 极致磨砂：表格容器 */
+/* 🚀 表格容器 */
 .table-wrapper {
   flex: 1;
   overflow: hidden;
-  background: rgba(22, 22, 26, 0.45);
+  background: var(--bems-glass-card);
   backdrop-filter: blur(28px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--bems-border-base);
   border-radius: 20px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 12px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 1px 0 var(--bems-rim-light), var(--bems-shadow-ambient);
   padding: 1px;
-  /* 让内部表格贴合边框 */
 }
 
-/* 高级感表格重写 */
 .cyber-table {
   --el-table-border-color: rgba(255, 255, 255, 0.04);
-  --el-table-header-bg-color: transparent;
   background-color: transparent !important;
 }
 
-/* ==========================================
-   🚀 终极修复：彻底剿灭表格深层的所有白色幽灵
-========================================== */
-
-/* 1. 彻底覆盖 JS 动态注入的 hover-row 类（这是核心元凶） */
+/* 🚀 彻底解决深层 Hover 的纯白幽灵问题，必须使用 var(--bems-hover-overlay) */
 :deep(.el-table--enable-row-hover .el-table__body tr:hover > td.el-table__cell),
-:deep(.el-table .el-table__body tr.hover-row > td.el-table__cell) {
-  background-color: rgba(255, 255, 255, 0.06) !important;
-}
-
-/* 2. 如果开启了斑马纹，强制压制斑马纹的 Hover 状态 */
+:deep(.el-table .el-table__body tr.hover-row > td.el-table__cell),
 :deep(.el-table--striped .el-table__body tr.el-table__row--striped:hover > td.el-table__cell),
-:deep(.el-table--striped .el-table__body tr.el-table__row--striped.hover-row > td.el-table__cell) {
-  background-color: rgba(255, 255, 255, 0.06) !important;
+:deep(.el-table--striped .el-table__body tr.el-table__row--striped.hover-row > td.el-table__cell),
+:deep(.el-table__fixed-body-wrapper .el-table__body tr:hover > td.el-table__cell),
+:deep(.el-table__fixed-body-wrapper .el-table__body tr.hover-row > td.el-table__cell) {
+  background-color: var(--bems-hover-overlay) !important;
 }
 
-/* 3. 修复固定列 (Fixed Columns) 的纯白遮挡层 */
 :deep(.el-table .el-table__fixed),
 :deep(.el-table .el-table__fixed-right),
 :deep(.el-table .el-table__fixed-header-wrapper),
@@ -705,13 +693,6 @@ onMounted(() => {
   background-color: transparent !important;
 }
 
-/* 4. 修复固定列在 Hover 时不同步变成白色的问题 */
-:deep(.el-table__fixed-body-wrapper .el-table__body tr:hover > td.el-table__cell),
-:deep(.el-table__fixed-body-wrapper .el-table__body tr.hover-row > td.el-table__cell) {
-  background-color: rgba(255, 255, 255, 0.06) !important;
-}
-
-/* 5. 干掉表格容器四周和固定列底部的绝对定位白线 */
 :deep(.el-table::before),
 :deep(.el-table::after),
 :deep(.el-table__inner-wrapper::before),
@@ -720,16 +701,14 @@ onMounted(() => {
   display: none !important;
 }
 
-/* 6. 如果开启了单行点击高亮 (Highlight Current Row) */
 :deep(.el-table .current-row > td.el-table__cell) {
-  background-color: rgba(59, 130, 246, 0.12) !important;
-  /* 给予淡淡的品牌蓝 */
+  background-color: var(--bems-active-overlay) !important;
 }
 
 :deep(.el-table th.el-table__cell) {
-  background-color: rgba(0, 0, 0, 0.2) !important;
+  background-color: var(--bems-glass-header) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
-  color: #71717a;
+  color: var(--bems-text-secondary);
   font-size: 13px;
   font-weight: 600;
   padding: 14px 0;
@@ -737,7 +716,7 @@ onMounted(() => {
 
 :deep(.el-table td.el-table__cell) {
   border-bottom: 1px solid rgba(255, 255, 255, 0.03) !important;
-  color: #f4f4f5;
+  color: var(--bems-text-primary);
   font-size: 14px;
   padding: 16px 0;
 }
@@ -752,7 +731,7 @@ onMounted(() => {
   background-color: transparent !important;
 }
 
-/* 标签精修 */
+/* 标签与分页 */
 .cyber-tag {
   border: none;
   font-weight: 600;
@@ -762,15 +741,14 @@ onMounted(() => {
 
 .warning-tag {
   background-color: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
+  color: var(--bems-color-warning);
 }
 
 .danger-tag {
   background-color: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  color: var(--bems-color-danger);
 }
 
-/* 分页器精修 */
 .pagination-wrapper {
   margin-top: 24px;
   display: flex;
@@ -779,27 +757,24 @@ onMounted(() => {
 
 .cyber-pagination {
   --el-pagination-bg-color: transparent;
-  --el-pagination-text-color: #71717a;
-  --el-pagination-button-color: #71717a;
-  --el-pagination-hover-color: #f4f4f5;
+  --el-pagination-text-color: var(--bems-text-secondary);
+  --el-pagination-button-color: var(--bems-text-secondary);
+  --el-pagination-hover-color: var(--bems-text-primary);
 }
 
 :deep(.el-pager li.is-active) {
-  color: #fff;
+  color: var(--bems-text-primary);
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bems-active-overlay);
   border-radius: 8px;
 }
 
-/* ==========================================
-   🚀 彻底洗掉表格内所有残留的霓虹光晕
-========================================== */
 :deep(.el-table [class*="glow"]),
 :deep(.el-table .cyan-glow),
 :deep(.el-table .time-text),
 :deep(.el-table td .cell span) {
   text-shadow: none !important;
-  color: #f4f4f5 !important;
+  color: var(--bems-text-primary) !important;
 }
 
 :deep(.el-table td.el-table__cell) {
@@ -808,33 +783,34 @@ onMounted(() => {
 }
 
 :deep(.el-table .time-column-text) {
-  color: #a1a1aa !important;
-  /* 沉稳的银灰色 */
+  color: var(--bems-text-regular) !important;
   font-weight: 500;
 }
+</style>
 
-/* 对话框/导出面板：同样采用厚玻璃 */
-:deep(.cyber-dialog) {
-  background: rgba(18, 18, 22, 0.85) !important;
+<style>
+/* 🚀 全局对话框与日历材质注入 */
+.cyber-dialog {
+  background: var(--bems-glass-heavy) !important;
   backdrop-filter: blur(40px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 30px 60px rgba(0, 0, 0, 0.6) !important;
+  border: 1px solid var(--bems-border-base) !important;
+  box-shadow: inset 0 1px 0 var(--bems-rim-light), var(--bems-shadow-float) !important;
   border-radius: 20px;
 }
 
-:deep(.cyber-dialog .el-dialog__header) {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+.cyber-dialog .el-dialog__header {
+  border-bottom: 1px solid var(--bems-border-base);
   padding: 20px 24px;
 }
 
-:deep(.cyber-dialog .el-dialog__title) {
-  color: #fff;
+.cyber-dialog .el-dialog__title {
+  color: var(--bems-text-primary);
   font-weight: 600;
   font-size: 16px;
 }
 
-:deep(.cyber-dialog .el-dialog__footer) {
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+.cyber-dialog .el-dialog__footer {
+  border-top: 1px solid var(--bems-border-base);
   padding: 20px 24px;
 }
 
@@ -848,8 +824,8 @@ onMounted(() => {
 
 .cyber-radio {
   margin: 0 !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--bems-border-base) !important;
+  background: var(--bems-glass-input);
   border-radius: 12px !important;
   transition: all 0.2s;
   padding: 0 20px;
@@ -857,15 +833,70 @@ onMounted(() => {
 }
 
 .cyber-radio.is-bordered.is-checked {
-  border-color: #3b82f6 !important;
-  background: rgba(59, 130, 246, 0.1);
+  border-color: var(--bems-color-primary) !important;
+  background: var(--bems-active-overlay);
 }
-</style>
 
-<style>
-/* 日历组件去霓虹并修复遮挡 */
-:deep(.el-year-table td .cell),
-:deep(.el-month-table td .cell) {
+.cyber-radio .el-radio__label {
+  color: var(--bems-text-primary) !important;
+}
+
+/* ==========================================
+   🚀 修复：Element Plus 日期选择器大底板全局覆盖
+========================================== */
+/* 彻底替换整个日历面板的白色背景，接入我们的玻璃变量 */
+.el-picker-panel,
+.el-date-range-picker {
+  background: var(--bems-glass-heavy) !important;
+  backdrop-filter: blur(24px) !important;
+  border: 1px solid var(--bems-border-base) !important;
+  box-shadow: var(--bems-shadow-float) !important;
+  color: var(--bems-text-primary) !important;
+}
+
+/* 隐藏原生的白色小箭头 */
+.el-picker-panel .el-popper__arrow::before {
+  display: none !important;
+}
+
+/* 修复左右两边日历的中间分割线 */
+.el-date-range-picker__content.is-left {
+  border-right: 1px solid var(--bems-border-base) !important;
+}
+
+/* 修复头部（年月标题）和切换按钮的颜色 */
+.el-date-range-picker__header {
+  color: var(--bems-text-primary) !important;
+}
+
+.el-picker-panel__icon-btn {
+  color: var(--bems-text-secondary) !important;
+}
+
+.el-picker-panel__icon-btn:hover {
+  color: var(--bems-text-primary) !important;
+}
+
+/* 修复表头 (一二三四五六日) 的颜色 */
+.el-date-table th {
+  color: var(--bems-text-secondary) !important;
+  border-bottom: 1px solid var(--bems-border-base) !important;
+}
+
+/* 修复未选中的普通日期字体颜色 */
+.el-date-table td .custom-cell .cell-text {
+  color: var(--bems-text-primary) !important;
+}
+
+/* 修复那些不可选（被禁用的未来日期）的弱化灰色 */
+.el-date-table td.disabled .custom-cell .cell-text {
+  color: rgba(113, 113, 122, 0.3) !important;
+}
+
+
+/* 日历组件修复 */
+.el-year-table td .cell,
+.el-month-table td .cell {
   padding: 0 !important;
   height: 40px !important;
 }
@@ -882,49 +913,54 @@ onMounted(() => {
 
 .custom-cell.is-start,
 .custom-cell.is-end {
-  background-color: #3b82f6 !important;
+  background-color: var(--bems-color-primary) !important;
   color: #fff !important;
 }
 
 .custom-cell.is-in-range {
-  background-color: rgba(59, 130, 246, 0.15) !important;
-  color: #f4f4f5 !important;
+  background-color: var(--bems-active-overlay) !important;
+  color: var(--bems-text-primary) !important;
 }
 
 /* ==========================================
-   🚀 修复：日期选择器范围高亮对比度
+   🚀 修复：日期选择器范围高亮对比度 (彻底解决深色隐身问题)
 ========================================== */
-/* 修复选中范围内的背景和字体颜色 */
-.el-date-table td.in-range .el-date-table-cell {
-  background-color: rgba(59, 130, 246, 0.25) !important;
-  /* 加深一点背景蓝 */
+
+/* 1. 核心修复：强行清除 Element Plus 默认的浅色实体底色，防止穿透！ */
+.el-date-table td.in-range {
+  background-color: transparent !important;
 }
 
+/* 2. 将我们的透明悬浮色准确地挂载到单元格内部 */
+.el-date-table td.in-range .el-date-table-cell,
+.custom-cell.is-in-range {
+  background-color: var(--bems-active-overlay) !important;
+}
+
+/* 3. 字体颜色读取全局变量，去除非必要的阴影 */
 .el-date-table td.in-range .el-date-table-cell__text,
 .el-date-table td.in-range .custom-cell .cell-text {
-  color: #ffffff !important;
-  /* 强制文字纯白 */
-  font-weight: 500 !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  /* 增加极细的黑色文字阴影，使其在蓝底上更锐利 */
+  color: var(--bems-text-primary) !important;
+  font-weight: 600 !important;
+  text-shadow: none !important;
 }
 
-/* 修复起点和终点（选中那两天的首尾）的高亮颜色 */
+/* 4. 起点和终点的圆圈高亮保持品牌色不变 */
 .el-date-table td.start-date .el-date-table-cell__text,
 .el-date-table td.end-date .el-date-table-cell__text,
 .el-date-table td.start-date .custom-cell .cell-text,
 .el-date-table td.end-date .custom-cell .cell-text {
-  background-color: #3b82f6 !important;
-  /* 静谧蓝主体色 */
+  background-color: var(--bems-color-primary) !important;
   color: #ffffff !important;
   font-weight: 600 !important;
   border-radius: 50% !important;
-  /* 保证高亮是个圆润的圈 */
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  /* 增加一点光晕显得更高级 */
 }
 
-/* 确保今日（Today）的文字也能看清 */
+/* 5. 确保今日（Today）的文字不受干扰 */
 .el-date-table td.today .el-date-table-cell__text {
-  color: #3b82f6 !important;
+  color: var(--bems-color-primary) !important;
   font-weight: 700;
 }
 </style>

@@ -201,6 +201,11 @@ const currentDataDate = ref('加载中...')
 const timeUnit = ref('day')
 const selectedParams = ref(['electricity', 'chilledwater'])
 
+// 🚀 新增：动态读取 CSS 变量翻译为真实色号，供 ECharts 画布使用
+const getThemeColor = (varName) => {
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || '#a1a1aa';
+}
+
 // 🚀 新增：预测开关状态
 const enablePrediction = ref(false)
 
@@ -331,7 +336,8 @@ const initPieChart = () => {
     series: {
       type: 'sunburst', radius: ['20%', '70%'], center: ['50%', '50%'],
       itemStyle: { borderRadius: 4, borderColor: '#0b091a', borderWidth: 2 },
-      levels: [{}, { label: { position: 'inner', fontWeight: 'bold', fontSize: 13, color: '#000' } }, { label: { position: 'outside', padding: 3, silent: false, color: '#a0a2b8', fontSize: 11 } }],
+      // 把 color: '#a0a2b8' 替换掉
+      levels: [{}, { label: { position: 'inner', fontWeight: 'bold', fontSize: 13, color: '#000' } }, { label: { position: 'outside', padding: 3, silent: false, color: 'var(--bems-text-secondary)', fontSize: 11 } }],
       data: []
     }
   })
@@ -348,6 +354,8 @@ const updateSunburstChart = (baseElec, baseWater) => {
   pieChart.setOption({
     series: [{
       animationType: 'scale', animationDuration: 1500, animationEasing: 'cubicOut',
+      // 🚀 修改 4：在这里动态注入饼图外圈的文字颜色
+      levels: [{}, { label: { position: 'inner', fontWeight: 'bold', fontSize: 13, color: '#000' } }, { label: { position: 'outside', padding: 3, silent: false, color: getThemeColor('--bems-text-secondary'), fontSize: 11 } }],
       data: [
         { name: '教育类', itemStyle: { color: colors.education }, children: calculateSubEnergy(parkElec * 0.35, parkWater * 0.35, 'education') },
         { name: '办公类', itemStyle: { color: colors.office }, children: calculateSubEnergy(parkElec * 0.30, parkWater * 0.30, 'office') },
@@ -555,7 +563,8 @@ const fetchDataAndRender = async () => {
 
       yAxisConfig.push({
         type: 'value', name: '电耗', position: 'left', nameTextStyle: { color: '#3b82f6' },
-        splitLine: { lineStyle: { color: '#1f1d36', type: 'dashed' } }, axisLabel: { color: '#3b82f6' }
+        // 原本是 color: '#1f1d36'，替换成变量边框色
+        splitLine: { lineStyle: { color: 'var(--bems-border-base)', type: 'dashed' } }
       })
 
       // 实体线：历史数据
@@ -637,9 +646,9 @@ const fetchDataAndRender = async () => {
           return html;
         }
       },
-      legend: { data: legendData, textStyle: { color: '#a0a2b8' }, icon: 'circle', top: '0%', right: '5%' },
+      legend: { data: legendData, textStyle: { color: getThemeColor('--bems-text-secondary') }, icon: 'circle', top: '0%', right: '5%' },
       grid: { left: '3%', right: '4%', bottom: '3%', top: '18%', containLabel: true },
-      xAxis: { type: 'category', data: xData, axisLabel: { color: '#a0a2b8' } },
+      xAxis: { type: 'category', data: xData, axisLabel: { color: getThemeColor('--bems-text-secondary') } },
       yAxis: yAxisConfig,
       series: seriesConfig
     }, true)
@@ -664,7 +673,8 @@ const updateRadarChart = (baseCop) => {
   radarChart.setOption({
     color: ['#3b82f6', '#10b981'],
     tooltip: { trigger: 'item', backgroundColor: 'rgba(11, 9, 26, 0.8)', textStyle: { color: '#fff' }, borderColor: '#2A2946' },
-    legend: { data: ['当前实时 COP', '设计基准 COP'], bottom: 0, textStyle: { color: '#a0a2b8' } },
+    // 将 textStyle: { color: '#a0a2b8' } 改为变量
+    legend: { data: ['当前实时 COP', '设计基准 COP'], bottom: 0, textStyle: { color: 'var(--bems-text-secondary)' } },
     radar: {
       indicator: [
         { name: '冷水机组', max: 6.5 }, { name: '冷冻水泵', max: 3.5 },
@@ -672,7 +682,12 @@ const updateRadarChart = (baseCop) => {
       ],
       splitArea: { show: false }, axisLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.1)' } },
       splitLine: { lineStyle: { color: 'rgba(0, 240, 255, 0.2)' } },
-      axisName: { color: '#e0e2f5', fontSize: 12, padding: [3, 5] },
+      // 🚀 修改 2：使用 getThemeColor 修复外圈文字不可见问题
+      axisName: {
+        color: getThemeColor('--bems-text-regular'),
+        fontWeight: 500,
+        fontSize: 12
+      },
       center: ['50%', '45%'], radius: '65%'
     },
     series: [{
@@ -691,15 +706,24 @@ const handleResize = () => {
   radarChart?.resize()
 }
 
+// 🚀 核心新增：监听主题切换广播，延迟 50ms 等待 CSS 变量生效后，重新渲染数据
+const handleThemeChange = () => {
+  setTimeout(() => {
+    fetchDataAndRender()
+  }, 50)
+}
+
 onMounted(() => {
   initPieChart()
   fetchCalendarAndRender()
   window.addEventListener('resize', handleResize)
+  window.addEventListener('theme-changed', handleThemeChange) // 🚀 新增监听
   alarmFeedTimer = setInterval(generateLiveAlarm, 12000)
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
+  window.removeEventListener('theme-changed', handleThemeChange) // 🚀 新增销毁
   if (alarmFeedTimer) clearInterval(alarmFeedTimer)
   lineChart?.dispose()
   pieChart?.dispose()
@@ -717,36 +741,24 @@ onUnmounted(() => {
   padding-top: 0 !important;
 }
 
-/* 高级便当盒卡片 */
-/* 🚀 核心：模拟玻璃厚度的卡片设计 */
+/* 🚀 使用变量统一卡片材质与物理厚度 */
 .bento-card,
 .bento-panel {
-  background: var(--glass-bg);
+  background: var(--bems-glass-card);
   backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--bems-border-base);
   border-radius: 20px;
-  /* 维持大圆角的高级感 */
   padding: 32px;
-  /* 加大填充，确保文字远离圆角边缘 */
-
-  /* 模拟物理厚度：顶部微弱白线，底部深色投影 */
-  box-shadow:
-    inset 0 1px 0 var(--glass-rim),
-    0 12px 40px rgba(0, 0, 0, 0.4);
-
+  box-shadow: inset 0 1px 0 var(--bems-rim-light), var(--bems-shadow-ambient);
   transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .bento-card:hover {
-  background: rgba(30, 30, 35, 0.5);
   transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: var(--bems-border-light);
 }
 
-/* 悬浮岛吸顶栏 */
-/* 悬浮中控台：像一块沉重的磨砂玻璃横梁 */
-/* 悬浮中控台：全平齐且无缝 */
+/* 悬浮中控台 */
 .global-control {
   position: sticky;
   top: -30px;
@@ -754,11 +766,11 @@ onUnmounted(() => {
   margin: -30px -20px 24px -20px;
   width: calc(100% + 40px);
   padding: 20px 40px;
-  background: rgba(9, 9, 11, 0.8) !important;
+  background: var(--bems-glass-header) !important;
   backdrop-filter: blur(40px) brightness(1.1);
-  border-bottom: 1px solid var(--glass-rim);
+  border-bottom: 1px solid var(--bems-rim-light);
   border-radius: 0 0 24px 24px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--bems-shadow-float);
 }
 
 .control-left {
@@ -768,34 +780,57 @@ onUnmounted(() => {
   flex-wrap: wrap;
 }
 
+/* ==========================================
+   🚀 中控台：防止挤压与间距优化
+========================================== */
 .control-item {
   display: flex;
   align-items: center;
+  gap: 12px;
+  /* 增加标签和下拉框之间的物理间隔 */
 }
 
 .control-label {
-  color: var(--text-muted);
-  margin-right: 10px;
+  color: var(--bems-text-secondary);
   font-weight: 500;
   font-size: 13px;
+  white-space: nowrap;
+  /* 核心：绝对不允许文字换行 */
+  flex-shrink: 0;
+  /* 核心：在 flex 布局中绝对不被压缩 */
 }
 
+/* 给下拉框设定一个沉稳大气的最小宽度 */
 .building-select {
-  width: 220px;
+  width: 220px !important;
+  flex-shrink: 0;
+}
+
+/* 状态字体的防挤压 */
+.inline-status {
+  display: flex;
+  align-items: center;
+  color: var(--bems-text-secondary);
+  font-size: 13px;
+  margin-left: 20px;
+  padding-left: 20px;
+  border-left: 1px solid var(--bems-border-base);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .inline-status {
   display: flex;
   align-items: center;
-  color: var(--text-muted);
+  color: var(--bems-text-secondary);
   font-size: 13px;
   margin-left: 20px;
   padding-left: 20px;
-  border-left: 1px solid var(--border-color);
+  border-left: 1px solid var(--bems-border-base);
 }
 
 .data-date {
-  color: var(--text-main);
+  color: var(--bems-text-primary);
   font-weight: 600;
   font-size: 14px;
   margin-left: 5px;
@@ -803,158 +838,79 @@ onUnmounted(() => {
 
 /* 控件覆写 */
 :deep(.el-radio-button__inner) {
-  background-color: transparent;
-  border-color: var(--border-color);
-  color: var(--text-muted);
+  background: transparent;
+  border-color: var(--bems-border-base);
+  color: var(--bems-text-regular);
 }
 
 :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
-  background-color: #27272a;
-  color: var(--text-main);
-  border-color: #3f3f46;
-  box-shadow: -1px 0 0 0 #3f3f46;
+  background: var(--bems-hover-overlay);
+  color: var(--bems-text-primary);
+  border-color: var(--bems-color-primary);
+  box-shadow: -1px 0 0 0 var(--bems-color-primary);
 }
 
 :deep(.cyber-checkbox-group .el-checkbox__input.is-checked .el-checkbox__inner) {
-  background-color: var(--accent-primary);
-  border-color: var(--accent-primary);
+  background: var(--bems-color-primary);
+  border-color: var(--bems-color-primary);
 }
 
 :deep(.cyber-checkbox-group .el-checkbox__input.is-checked + .el-checkbox__label) {
-  color: var(--text-main);
-  font-weight: 500;
+  color: var(--bems-text-primary);
   text-shadow: none;
 }
 
-:deep(.cyber-checkbox-group .el-checkbox) {
-  margin-right: 15px;
-}
-
 :deep(.ai-predict-switch .el-switch__core) {
-  border-color: var(--border-color);
-  background-color: #27272a;
+  border-color: var(--bems-border-base);
+  background-color: var(--bems-glass-input);
 }
 
 :deep(.ai-predict-switch.is-checked .el-switch__core) {
-  background-color: var(--accent-primary);
-  border-color: var(--accent-primary);
+  background-color: var(--bems-color-primary);
+  border-color: var(--bems-color-primary);
 }
 
 :deep(.ai-predict-switch .el-switch__label) {
-  color: var(--text-muted);
+  color: var(--bems-text-secondary);
 }
 
 :deep(.ai-predict-switch.is-checked .el-switch__label) {
-  color: var(--accent-primary);
+  color: var(--bems-color-primary);
   font-weight: 600;
   text-shadow: none;
 }
 
 .date-navigator :deep(.el-button) {
-  background-color: transparent;
-  border-color: var(--border-color);
-  color: var(--text-muted);
+  background: transparent;
+  border-color: var(--bems-border-base);
+  color: var(--bems-text-regular);
 }
 
 .date-navigator :deep(.el-button:hover) {
-  color: var(--text-main);
-  border-color: #52525b;
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--bems-text-primary);
+  background: var(--bems-hover-overlay);
 }
 
-.date-picker-custom {
-  width: 140px;
-  margin: 0;
-}
-
-/* 日期选择器与下拉框：深度定制为嵌入式质感 */
-/* 控件外观：完全契合黑曜石风格 */
 :deep(.el-input__wrapper) {
-  background: rgba(0, 0, 0, 0.3) !important;
-  border: 1px solid var(--glass-border) !important;
+  background: var(--bems-glass-input) !important;
+  border: 1px solid var(--bems-border-base) !important;
   box-shadow: none !important;
   border-radius: 10px;
 }
 
 :deep(.el-input__inner) {
-  color: #fff !important;
+  color: var(--bems-text-primary) !important;
   font-weight: 500;
 }
 
-/* 日历热力图 */
-.custom-calendar-cell {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-}
-
-.cell-text {
-  z-index: 10;
-  font-weight: 500;
-  font-size: 13px;
-}
-
-.energy-bar {
-  position: absolute;
-  bottom: 4px;
-  height: 3px;
-  border-radius: 2px;
-  transition: all 0.3s ease;
-}
-
-.is-disabled .cell-text {
-  color: #52525b;
-}
-
-/* KPI 卡片 */
 .kpi-section {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 24px;
 }
 
-.kpi-card {
-  position: relative;
-  overflow: hidden;
-  /* 裁剪流光 */
-  background: rgba(15, 15, 20, 0.4);
-  /* 🚀 增加一个极细的内发光边缘，模拟高定质感 */
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
-    0 20px 50px rgba(0, 0, 0, 0.3);
-}
-
-/* 🚀 动态流光边框特效（仅在重点卡片上使用） */
-.kpi-card::after {
-  content: "";
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: conic-gradient(transparent,
-      rgba(59, 130, 246, 0.1),
-      transparent 20%);
-  animation: rotate-glow 8s linear infinite;
-  pointer-events: none;
-}
-
-@keyframes rotate-glow {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .kpi-title {
-  color: var(--text-muted);
+  color: var(--bems-text-secondary);
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
@@ -962,65 +918,35 @@ onUnmounted(() => {
   margin-bottom: 16px;
 }
 
-/* 状态数值：极简大气 */
 .kpi-value {
   font-size: 42px;
   font-weight: 700;
-  color: #fff;
-  font-family: 'Inter', -apple-system, sans-serif;
+  color: var(--bems-text-primary);
+  font-family: 'Inter', sans-serif;
   letter-spacing: -2px;
   margin-bottom: 4px;
 }
 
 .kpi-value .unit {
   font-size: 14px;
-  color: var(--text-muted);
+  color: var(--bems-text-secondary);
   font-weight: 400;
   letter-spacing: 0;
 }
 
-/* 取消所有的霓虹发光，替换为高级质感色 */
-.cyan-glow {
-  color: var(--text-main);
-  text-shadow: none;
-}
-
-.purple-glow {
-  color: var(--text-main);
-  text-shadow: none;
-}
-
-.green-glow {
-  color: var(--text-main);
-  text-shadow: none;
-}
-
-.red-glow {
-  color: var(--text-main);
-  text-shadow: none;
-}
-
-.kpi-trend {
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--text-muted);
-}
-
 .trend-up {
-  color: var(--accent-green);
+  color: var(--bems-color-success);
 }
 
 .trend-down {
-  color: var(--accent-primary);
+  color: var(--bems-color-primary);
 }
 
 .trend-alert {
-  color: #ef4444;
+  color: var(--bems-color-danger);
 }
 
-/* 图表区域 */
+/* 布局网格 */
 .main-grid {
   display: grid;
   grid-template-columns: 1.3fr 1fr;
@@ -1042,7 +968,7 @@ onUnmounted(() => {
 }
 
 .header-title {
-  color: var(--text-main);
+  color: var(--bems-text-primary);
   font-size: 15px;
   font-weight: 600;
 }
@@ -1076,7 +1002,7 @@ onUnmounted(() => {
   grid-row: 2 / 3;
 }
 
-/* 告警列表精修 */
+/* 告警列表 */
 .alarm-list {
   display: flex;
   flex-direction: column;
@@ -1091,14 +1017,13 @@ onUnmounted(() => {
 }
 
 .alarm-list::-webkit-scrollbar-thumb {
-  background: #3f3f46;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 2px;
 }
 
-/* 告警项：磨砂条效果 */
 .alarm-item {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--bems-glass-input);
+  border: 1px solid var(--bems-border-base);
   border-radius: 14px;
   padding: 16px 20px;
   margin-bottom: 12px;
@@ -1106,7 +1031,7 @@ onUnmounted(() => {
 }
 
 .alarm-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bems-hover-overlay);
   transform: scale(1.01);
 }
 
@@ -1123,16 +1048,16 @@ onUnmounted(() => {
 }
 
 .critical {
-  background-color: #ef4444;
+  background: var(--bems-color-danger);
   box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
 }
 
 .warning {
-  background-color: #f59e0b;
+  background: var(--bems-color-warning);
 }
 
 .offline {
-  background-color: #71717a;
+  background: var(--bems-text-secondary);
 }
 
 .alarm-info {
@@ -1141,20 +1066,21 @@ onUnmounted(() => {
 
 .alarm-time {
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--bems-text-secondary);
   margin-bottom: 4px;
 }
 
 .alarm-desc {
   font-size: 13px;
-  color: var(--text-main);
+  color: var(--bems-text-primary);
   line-height: 1.5;
 }
 
+/* 智能诊断按钮使用变量 */
 .cyber-btn-small {
-  background: #27272a;
-  border: 1px solid var(--border-color);
-  color: var(--text-main);
+  background: var(--bems-glass-input);
+  border: 1px solid var(--bems-border-base);
+  color: var(--bems-text-primary);
   font-size: 12px;
   border-radius: 6px;
   padding: 6px 12px;
@@ -1162,8 +1088,8 @@ onUnmounted(() => {
 }
 
 .cyber-btn-small:hover {
-  background: #3f3f46;
-  border-color: #52525b;
+  background: var(--bems-active-overlay);
+  border-color: var(--bems-color-primary);
   cursor: pointer;
 }
 
@@ -1191,7 +1117,7 @@ onUnmounted(() => {
 
 .live-indicator {
   font-size: 12px;
-  color: var(--accent-green);
+  color: var(--bems-color-success);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1204,7 +1130,7 @@ onUnmounted(() => {
 .live-indicator .dot {
   width: 6px;
   height: 6px;
-  background-color: var(--accent-green);
+  background-color: var(--bems-color-success);
   border-radius: 50%;
   animation: blink-dot 2s infinite;
 }
@@ -1221,62 +1147,67 @@ onUnmounted(() => {
   }
 }
 
-/* COP 科普悬浮 */
 .help-icon {
   margin-left: 6px;
   cursor: pointer;
-  color: var(--text-muted);
+  color: var(--bems-text-secondary);
   transition: color 0.2s;
 }
 
 .help-icon:hover {
-  color: var(--text-main);
+  color: var(--bems-text-primary);
 }
 </style>
 
 <style>
-/* 全局弹窗高级定制 */
+/* 悬浮气泡挂载在全局，必须同步变量字典 */
 .el-popper.cyber-popover {
-  background: rgba(18, 18, 22, 0.8) !important;
+  background: var(--bems-glass-heavy) !important;
   backdrop-filter: blur(24px) !important;
-  border: 1px solid var(--glass-rim) !important;
+  border: 1px solid var(--bems-border-base) !important;
   border-radius: 16px !important;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6) !important;
+  box-shadow: inset 0 1px 0 var(--bems-rim-light), var(--bems-shadow-float) !important;
   padding: 20px !important;
+  color: var(--bems-text-primary) !important;
 }
 
 .el-popper.cyber-popover .el-popper__arrow::before {
-  background: #18181b !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  display: none !important;
 }
 
 .cyber-popover .explainer-title {
-  color: #fafafa !important;
+  color: var(--bems-text-primary) !important;
   font-weight: 600;
   margin-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--bems-border-base);
   padding-bottom: 8px;
   font-size: 14px;
 }
 
 .cyber-popover .explainer-formula {
-  background: rgba(0, 0, 0, 0.3) !important;
-  color: #e4e4e7 !important;
-  border-radius: 6px;
+  background: var(--bems-glass-input) !important;
+  color: var(--bems-text-primary) !important;
+  border-radius: 8px;
   margin: 12px 0;
   padding: 12px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 13px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--bems-border-base);
+}
+
+.cyber-popover .explainer-text {
+  color: var(--bems-text-regular);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .cyber-popover .hl-green {
-  color: #10b981;
+  color: var(--bems-color-success);
   font-weight: 600;
 }
 
 .cyber-popover .hl-cyan {
-  color: #3b82f6;
+  color: var(--bems-color-primary);
   font-weight: 600;
 }
 
@@ -1286,13 +1217,7 @@ onUnmounted(() => {
 }
 
 .cyber-popover .hl-orange {
-  color: #f59e0b;
+  color: var(--bems-color-warning);
   font-weight: 600;
-}
-
-.cyber-popover .explainer-text {
-  color: #a1a1aa;
-  font-size: 12px;
-  line-height: 1.6;
 }
 </style>
