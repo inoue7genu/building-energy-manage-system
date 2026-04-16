@@ -60,135 +60,18 @@
 </template>
 
 <script setup>
-// 修复了原来代码中重复 import 的问题，并引入了 VideoPause 图标
 import { ref, nextTick, watch, onUnmounted } from 'vue'
 import { Odometer, Position, Close, Cpu, VideoPause } from '@element-plus/icons-vue'
 import { marked } from 'marked'
 
+// --- 状态定义 ---
 const visible = ref(false)
 const inputMessage = ref('')
 const isTyping = ref(false)
 const chatHistoryRef = ref(null)
-
-// --- 新增：存储当前的 EventSource 实例 ---
+const floatingBtnRef = ref(null)
+const chatPanelRef = ref(null)
 const activeEventSource = ref(null)
-
-// --- 新增：主动停止生成的方法 ---
-const stopGeneration = () => {
-    if (activeEventSource.value) {
-        activeEventSource.value.close() // 强制关闭连接
-        activeEventSource.value = null
-        isTyping.value = false
-
-        // 在聊天记录里追加一个中止提示
-        const lastMsgIndex = chatList.value.length - 1
-        if (chatList.value[lastMsgIndex].role === 'ai') {
-            chatList.value[lastMsgIndex].content += '\n\n*(已手动中止生成)*'
-        }
-        scrollToBottom()
-    }
-}
-
-// --- 新增：监听面板关闭事件，关闭时强制停止生成 ---
-watch(visible, (newVal) => {
-    if (!newVal) {
-        stopGeneration()
-    }
-})
-
-// --- 悬浮球拖拽专用逻辑 ---
-const floatingBtnRef = ref(null);
-let isDraggingBtn = false;
-
-const handleBtnMouseDown = (e) => {
-    const el = floatingBtnRef.value;
-    if (!el) return;
-
-    isDraggingBtn = false;
-    const startX = e.clientX;
-    const startY = e.clientY;
-
-    const rect = el.getBoundingClientRect();
-    const offsetX = e.clientX - rect.left;
-    const offsetY = e.clientY - rect.top;
-
-    el.style.left = rect.left + 'px';
-    el.style.top = rect.top + 'px';
-    el.style.right = 'auto';
-    el.style.bottom = 'auto';
-    el.style.transition = 'none';
-
-    const handleMouseMove = (moveEvent) => {
-        moveEvent.preventDefault();
-
-        const dx = moveEvent.clientX - startX;
-        const dy = moveEvent.clientY - startY;
-
-        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-            isDraggingBtn = true;
-        }
-
-        let newLeft = moveEvent.clientX - offsetX;
-        let newTop = moveEvent.clientY - offsetY;
-
-        newLeft = Math.max(0, Math.min(window.innerWidth - rect.width, newLeft));
-        newTop = Math.max(0, Math.min(window.innerHeight - rect.height, newTop));
-
-        el.style.left = newLeft + 'px';
-        el.style.top = newTop + 'px';
-    };
-
-    const handleMouseUp = () => {
-        el.style.transition = 'all 0.3s ease';
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-
-        if (!isDraggingBtn) {
-            toggleAssistant();
-        }
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-};
-
-
-const chatPanelRef = ref(null);
-
-const handleMouseDown = (e) => {
-    const el = chatPanelRef.value;
-    if (!el) return;
-
-    const rect = el.getBoundingClientRect();
-    const offsetX = e.clientX - rect.left;
-    const offsetY = e.clientY - rect.top;
-
-    el.style.left = rect.left + 'px';
-    el.style.top = rect.top + 'px';
-    el.style.right = 'auto';
-    el.style.bottom = 'auto';
-
-    const handleMouseMove = (moveEvent) => {
-        moveEvent.preventDefault();
-
-        let newLeft = moveEvent.clientX - offsetX;
-        let newTop = moveEvent.clientY - offsetY;
-
-        newLeft = Math.max(0, Math.min(window.innerWidth - rect.width, newLeft));
-        newTop = Math.max(0, Math.min(window.innerHeight - rect.height, newTop));
-
-        el.style.left = newLeft + 'px';
-        el.style.top = newTop + 'px';
-    };
-
-    const handleMouseUp = () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-};
 
 const chatList = ref([
     {
@@ -197,31 +80,171 @@ const chatList = ref([
     }
 ])
 
-const toggleAssistant = () => {
-    visible.value = !visible.value;
-    if (visible.value) scrollToBottom();
+// --- 🚀 核心：精准中心对齐定位算法 ---
+// 注意：现在接收外部传入的 btnRect，避免拿到 display: none 时的 0 坐标
+const updatePanelPosition = (btnRect) => {
+    const panel = chatPanelRef.value;
+    if (!panel || !btnRect) return;
+
+    const panelWidth = panel.offsetWidth || 420;
+    const panelHeight = panel.offsetHeight || 500;
+    const margin = 20;
+    const gap = 10; // 🚀 优化 1：将基础间距缩短为 10px，视觉更紧凑
+
+    // 1. 计算悬浮球的中心 X 坐标
+    const btnCenterX = btnRect.left + btnRect.width / 2;
+
+    // 2. 计算面板的起始 Left
+    let targetLeft = btnCenterX - panelWidth / 2;
+
+    // 3. X 轴边界碰撞修正
+    if (targetLeft < margin) {
+        targetLeft = margin;
+    } else if (targetLeft + panelWidth > window.innerWidth - margin) {
+        targetLeft = window.innerWidth - panelWidth - margin;
+    }
+
+    // 4. Y 轴计算：尝试弹在球的正上方
+    let targetTop = btnRect.top - panelHeight - gap;
+
+    // 5. Y 轴边界碰撞修正：如果上方放不下，弹到球下方
+    if (targetTop < margin) {
+        targetTop = btnRect.bottom + gap;
+        // 兜底：如果下方也放不下，强行吸附在屏幕底部
+        if (targetTop + panelHeight > window.innerHeight - margin) {
+            targetTop = window.innerHeight - panelHeight - margin;
+        }
+    }
+
+    panel.style.right = 'auto';
+    panel.style.bottom = 'auto';
+    panel.style.left = `${targetLeft}px`;
+    panel.style.top = `${targetTop}px`;
+};
+
+// --- 面板控制与滚动 ---
+const toggleAssistant = async () => {
+    if (!visible.value) {
+        // 🚀 关键修复：在 visible 变为 true 之前（悬浮球消失前），抓取真实的物理坐标
+        const btn = floatingBtnRef.value;
+        const btnRect = btn ? btn.getBoundingClientRect() : null;
+
+        visible.value = true;
+
+        await nextTick(); // 等待 Vue 渲染出对话框DOM
+
+        if (btnRect) {
+            updatePanelPosition(btnRect); // 使用刚才抓取的真实坐标进行定位
+        }
+        scrollToBottom();
+    } else {
+        visible.value = false;
+    }
 }
 
-const openAssistant = (autoPrompt = '') => {
-    visible.value = true
+const openAssistant = async (autoPrompt = '') => {
+    if (!visible.value) {
+        const btn = floatingBtnRef.value;
+        const btnRect = btn ? btn.getBoundingClientRect() : null;
+
+        visible.value = true;
+        await nextTick();
+
+        if (btnRect) {
+            updatePanelPosition(btnRect);
+        }
+    }
+
     if (autoPrompt) {
         setTimeout(() => {
             if (!isTyping.value) {
-                inputMessage.value = autoPrompt
-                sendMessage()
+                inputMessage.value = autoPrompt;
+                sendMessage();
             }
-        }, 300)
+        }, 300);
     }
 }
-defineExpose({ openAssistant })
+defineExpose({ openAssistant });
+
+// --- 悬浮球拖拽逻辑 ---
+let isDraggingBtn = false;
+const handleBtnMouseDown = (e) => {
+    const el = floatingBtnRef.value;
+    if (!el) return;
+
+    isDraggingBtn = false;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const rect = el.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+
+    const handleMouseMove = (moveEvent) => {
+        const dx = moveEvent.clientX - startX;
+        const dy = moveEvent.clientY - startY;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) isDraggingBtn = true;
+
+        let newLeft = moveEvent.clientX - offsetX;
+        let newTop = moveEvent.clientY - offsetY;
+
+        newLeft = Math.max(0, Math.min(window.innerWidth - rect.width, newLeft));
+        newTop = Math.max(0, Math.min(window.innerHeight - rect.height, newTop));
+
+        el.style.left = `${newLeft}px`;
+        el.style.top = `${newTop}px`;
+        el.style.right = 'auto';
+        el.style.bottom = 'auto';
+        el.style.transition = 'none';
+    };
+
+    const handleMouseUp = () => {
+        el.style.transition = 'all 0.3s ease';
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        if (!isDraggingBtn) toggleAssistant();
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+};
+
+// --- 对话面板顶部拖拽逻辑 ---
+const handleMouseDown = (e) => {
+    const el = chatPanelRef.value;
+    if (!el) return;
+
+    const rect = el.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+
+    const handleMouseMove = (moveEvent) => {
+        let newLeft = moveEvent.clientX - offsetX;
+        let newTop = moveEvent.clientY - offsetY;
+
+        newLeft = Math.max(0, Math.min(window.innerWidth - rect.width, newLeft));
+        newTop = Math.max(0, Math.min(window.innerHeight - rect.height, newTop));
+
+        el.style.left = `${newLeft}px`;
+        el.style.top = `${newTop}px`;
+    };
+
+    const handleMouseUp = () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+};
 
 const scrollToBottom = async () => {
-    await nextTick()
+    await nextTick();
     if (chatHistoryRef.value) {
-        chatHistoryRef.value.scrollTop = chatHistoryRef.value.scrollHeight
+        chatHistoryRef.value.scrollTop = chatHistoryRef.value.scrollHeight;
     }
-}
+};
 
+// --- AI 通信逻辑 ---
 const sendMessage = () => {
     const text = inputMessage.value.trim()
     if (!text || isTyping.value) return
@@ -235,13 +258,10 @@ const sendMessage = () => {
 
     const url = `http://localhost:8080/api/ai/chat/stream?message=${encodeURIComponent(text)}`
     const eventSource = new EventSource(url)
-
-    // ⚠️ 核心：将实例保存下来，以便随时中断
     activeEventSource.value = eventSource
 
     eventSource.onmessage = (event) => {
         const lastMsgIndex = chatList.value.length - 1
-        // 如果后端传来了结束信号（例如 [DONE]），可以主动关闭
         if (event.data === '[DONE]') {
             eventSource.close()
             activeEventSource.value = null
@@ -257,13 +277,12 @@ const sendMessage = () => {
     eventSource.onerror = (error) => {
         isTyping.value = false
         eventSource.close()
-        activeEventSource.value = null // 清理实例
+        activeEventSource.value = null
 
         const lastMsgIndex = chatList.value.length - 1
         if (chatList.value[lastMsgIndex].content === '') {
-            chatList.value[lastMsgIndex].content = '⚠️ **中枢连接异常**：大模型服务响应超时或知识库上下文超载。请联系系统管理员检查 RAG 参数或 API 状态。'
+            chatList.value[lastMsgIndex].content = '⚠️ **中枢连接异常**：大模型服务响应超时或网络阻断。请检查后端服务。'
         } else {
-            // 如果是因为手动 close 引发的错误（部分浏览器行为），上面已经加上了中止提示，这里可以不做额外处理，或者按需调整
             if (!chatList.value[lastMsgIndex].content.includes('已手动中止生成')) {
                 chatList.value[lastMsgIndex].content += '\n\n*(信号中断，停止输出)*'
             }
@@ -272,19 +291,27 @@ const sendMessage = () => {
     }
 }
 
-const parseMarkdown = (text) => {
-    if (!text) return ''
-    return marked.parse(text)
+const stopGeneration = () => {
+    if (activeEventSource.value) {
+        activeEventSource.value.close()
+        activeEventSource.value = null
+        isTyping.value = false
+
+        const lastMsgIndex = chatList.value.length - 1
+        if (chatList.value[lastMsgIndex].role === 'ai') {
+            chatList.value[lastMsgIndex].content += '\n\n*(已手动中止生成)*'
+        }
+        scrollToBottom()
+    }
 }
 
-// --- 新增：组件卸载时进行安全清理 ---
-onUnmounted(() => {
-    stopGeneration()
-})
+const parseMarkdown = (text) => marked.parse(text || '');
+
+onUnmounted(() => stopGeneration());
+watch(visible, (newVal) => { if (!newVal) stopGeneration() });
 </script>
 
 <style scoped>
-/* 原有样式保持不变... */
 .ai-copilot-container {
     position: relative;
     z-index: 9999;
@@ -329,8 +356,6 @@ onUnmounted(() => {
 
 .floating-chat-panel {
     position: fixed;
-    right: 40px;
-    bottom: 120px;
     width: 420px;
     height: 65vh;
     min-height: 500px;
@@ -345,15 +370,19 @@ onUnmounted(() => {
     overflow: hidden;
 }
 
+/* 🚀 优化 2：设置缩放原点居中，让弹出显得更稳 */
 .pop-up-enter-active,
 .pop-up-leave-active {
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transform-origin: center center;
 }
 
+/* 🚀 核心修复：删除了 translateY(20px)，杜绝下方弹出时的巨大空隙 */
 .pop-up-enter-from,
 .pop-up-leave-to {
     opacity: 0;
-    transform: translateY(20px) scale(0.95);
+    transform: scale(0.95);
+    /* 改为纯缩放淡入，不论上下方弹出都保持绝对对称 */
     pointer-events: none;
 }
 
@@ -532,7 +561,6 @@ onUnmounted(() => {
     box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
 }
 
-/* --- 新增：停止按钮专属样式 --- */
 .stop-btn {
     border: 1px solid #FF4D4F;
     color: #FF4D4F;
