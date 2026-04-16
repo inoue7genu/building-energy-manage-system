@@ -6,7 +6,7 @@
       <div class="grid-overlay"></div>
     </div>
 
-    <aside class="sidebar-wrapper" :class="{ 'collapsed': isCollapsed }">
+    <aside class="sidebar-wrapper" :class="{ 'collapsed': isCollapsed }" v-if="!isLoginPage">
       <div class="sidebar-logo">
         <el-icon :size="28" color="#00F0FF">
           <Monitor />
@@ -43,12 +43,13 @@
     </aside>
 
     <main class="main-container">
-      <header class="top-header">
+      <header class="top-header" v-if="!isLoginPage">
         <div class="header-left">
           <span class="breadcrumb-current">{{ currentPathName }}</span>
         </div>
 
         <div class="header-right">
+
           <el-button circle text @click="toggleTheme"
             style="font-size: 18px; color: var(--bems-text-primary); margin-right: 15px; transition: all 0.3s;">
             <el-icon>
@@ -56,6 +57,7 @@
               <Moon v-else />
             </el-icon>
           </el-button>
+
           <div class="system-time">
             <el-icon>
               <Timer />
@@ -63,16 +65,30 @@
             <span>{{ currentTime }}</span>
           </div>
           <el-divider direction="vertical" />
-          <el-avatar :size="32" class="user-avatar">Admin</el-avatar>
+
+          <el-dropdown trigger="click" @command="handleCommand">
+            <div class="avatar-wrapper">
+              <el-avatar :size="32" class="user-avatar">AD</el-avatar>
+              <el-icon class="avatar-arrow">
+                <ArrowDown />
+              </el-icon>
+            </div>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="logout" style="color: var(--bems-color-danger);">
+                  <el-icon>
+                    <SwitchButton />
+                  </el-icon> 退出登录
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+
         </div>
       </header>
 
-      <section class="content-view">
-        <router-view v-slot="{ Component }">
-          <transition name="page-fade" mode="out-in">
-            <component :is="Component" />
-          </transition>
-        </router-view>
+      <section class="content-view" :style="{ padding: isLoginPage ? '0' : '24px' }">
+        <router-view />
       </section>
     </main>
 
@@ -82,18 +98,34 @@
 
 <script setup>
 import { ref, computed, onMounted, provide } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   DataLine, Search, Monitor,
   Timer, Fold, Expand,
-  Sunny, Moon // 🚀 新增这两个图标
+  Sunny, Moon, ArrowDown, SwitchButton
 } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import GlobalAiAssistant from './components/GlobalAiAssistant.vue'
 
 const route = useRoute()
+const router = useRouter() // 🚀 获取路由跳转能力
+
+// 🚀 新增：用来判断当前是不是登录页
+const isLoginPage = computed(() => route.path === '/login')
+
+
 const isCollapsed = ref(false)
 const aiAssistantRef = ref(null)
 const currentTime = ref('')
+
+// 🚀 处理下拉菜单的点击事件
+const handleCommand = (command) => {
+  if (command === 'logout') {
+    localStorage.removeItem('bems-token')
+    ElMessage.success('已安全退出系统')
+    router.push('/login')
+  }
+}
 
 // 动态路由名称
 const currentPathName = computed(() => {
@@ -478,5 +510,26 @@ html {
 .page-fade-leave-to {
   opacity: 0;
   transform: translateY(-8px);
+}
+
+/* 🚀 头像下拉菜单交互样式 */
+.avatar-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  /* 鼠标变成小手 */
+  outline: none;
+  /* 去除点击时的默认黑框 */
+}
+
+.avatar-arrow {
+  color: var(--bems-text-secondary);
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.avatar-wrapper:hover .avatar-arrow {
+  color: var(--bems-text-primary);
 }
 </style>
