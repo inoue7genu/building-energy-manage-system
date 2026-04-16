@@ -711,46 +711,54 @@ onUnmounted(() => {
 .dashboard-container {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
   padding-bottom: 40px;
   box-sizing: border-box;
   padding-top: 0 !important;
 }
 
 /* 高级便当盒卡片 */
-.bento-panel,
-.bento-card {
-  background: var(--panel-bg);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
-  transition: border-color 0.3s;
+/* 🚀 核心：模拟玻璃厚度的卡片设计 */
+.bento-card,
+.bento-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  /* 维持大圆角的高级感 */
+  padding: 32px;
+  /* 加大填充，确保文字远离圆角边缘 */
+
+  /* 模拟物理厚度：顶部微弱白线，底部深色投影 */
+  box-shadow:
+    inset 0 1px 0 var(--glass-rim),
+    0 12px 40px rgba(0, 0, 0, 0.4);
+
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .bento-card:hover {
-  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(30, 30, 35, 0.5);
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 /* 悬浮岛吸顶栏 */
+/* 悬浮中控台：像一块沉重的磨砂玻璃横梁 */
+/* 悬浮中控台：全平齐且无缝 */
 .global-control {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 24px;
-  flex-wrap: wrap;
-  gap: 15px;
   position: sticky;
-  top: -20px;
+  top: -30px;
   z-index: 2000;
-  margin: -20px -20px 24px -20px;
+  margin: -30px -20px 24px -20px;
   width: calc(100% + 40px);
-  border-radius: 0 0 16px 16px;
-  background: rgba(9, 9, 11, 0.85) !important;
-  backdrop-filter: blur(20px) saturate(150%);
-  border-bottom: 1px solid var(--border-color);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
+  padding: 20px 40px;
+  background: rgba(9, 9, 11, 0.8) !important;
+  backdrop-filter: blur(40px) brightness(1.1);
+  border-bottom: 1px solid var(--glass-rim);
+  border-radius: 0 0 24px 24px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 }
 
 .control-left {
@@ -859,16 +867,18 @@ onUnmounted(() => {
   margin: 0;
 }
 
+/* 日期选择器与下拉框：深度定制为嵌入式质感 */
+/* 控件外观：完全契合黑曜石风格 */
 :deep(.el-input__wrapper) {
-  background-color: #18181b !important;
-  box-shadow: 0 0 0 1px var(--border-color) inset !important;
-  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: none !important;
+  border-radius: 10px;
 }
 
 :deep(.el-input__inner) {
-  color: var(--text-main) !important;
+  color: #fff !important;
   font-weight: 500;
-  text-align: center;
 }
 
 /* 日历热力图 */
@@ -904,33 +914,67 @@ onUnmounted(() => {
 .kpi-section {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  gap: 24px;
 }
 
 .kpi-card {
-  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  /* 裁剪流光 */
+  background: rgba(15, 15, 20, 0.4);
+  /* 🚀 增加一个极细的内发光边缘，模拟高定质感 */
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+/* 🚀 动态流光边框特效（仅在重点卡片上使用） */
+.kpi-card::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(transparent,
+      rgba(59, 130, 246, 0.1),
+      transparent 20%);
+  animation: rotate-glow 8s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes rotate-glow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .kpi-title {
   color: var(--text-muted);
-  font-size: 13px;
-  margin-bottom: 12px;
-  display: flex;
-  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 16px;
 }
 
+/* 状态数值：极简大气 */
 .kpi-value {
-  font-size: 36px;
-  font-weight: 600;
-  font-family: 'Inter', sans-serif;
-  margin-bottom: 8px;
-  letter-spacing: -1px;
+  font-size: 42px;
+  font-weight: 700;
+  color: #fff;
+  font-family: 'Inter', -apple-system, sans-serif;
+  letter-spacing: -2px;
+  margin-bottom: 4px;
 }
 
 .kpi-value .unit {
   font-size: 14px;
   color: var(--text-muted);
-  margin-left: 4px;
   font-weight: 400;
   letter-spacing: 0;
 }
@@ -1051,19 +1095,19 @@ onUnmounted(() => {
   border-radius: 2px;
 }
 
+/* 告警项：磨砂条效果 */
 .alarm-item {
-  display: flex;
-  align-items: center;
-  padding: 14px 16px;
   background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  gap: 12px;
-  transition: all 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  transition: all 0.3s ease;
 }
 
 .alarm-item:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
+  transform: scale(1.01);
 }
 
 .alarm-status {
@@ -1193,13 +1237,12 @@ onUnmounted(() => {
 <style>
 /* 全局弹窗高级定制 */
 .el-popper.cyber-popover {
-  background: rgba(24, 24, 27, 0.85) !important;
-  backdrop-filter: blur(20px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4) !important;
-  color: #fafafa !important;
-  border-radius: 12px !important;
-  padding: 16px !important;
+  background: rgba(18, 18, 22, 0.8) !important;
+  backdrop-filter: blur(24px) !important;
+  border: 1px solid var(--glass-rim) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6) !important;
+  padding: 20px !important;
 }
 
 .el-popper.cyber-popover .el-popper__arrow::before {

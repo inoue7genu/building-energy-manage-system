@@ -317,49 +317,56 @@ watch(visible, (newVal) => { if (!newVal) stopGeneration() });
     z-index: 9999;
 }
 
-/* 高级感悬浮球 */
+/* 🚀 极致磨砂悬浮球：带有厚度感和光泽 */
 .floating-btn {
     position: fixed;
     right: 40px;
     bottom: 40px;
-    width: 56px;
-    height: 56px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
-    background: rgba(24, 24, 27, 0.8);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(20, 20, 24, 0.6);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    /* 物理厚度模拟 */
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        0 12px 30px rgba(0, 0, 0, 0.5);
     display: flex;
     justify-content: center;
     align-items: center;
-    color: #fafafa;
+    color: #f4f4f5;
     cursor: pointer;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s;
 }
 
 .floating-btn:hover {
-    transform: scale(1.08);
-    background: #27272a;
-    border-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1.08) translateY(-4px);
+    background: rgba(30, 30, 36, 0.7);
 }
 
-/* 高级感对话面板 */
+/* 🚀 高定版悬浮对话舱 */
 .floating-chat-panel {
     position: fixed;
-    width: 400px;
-    height: 60vh;
-    min-height: 480px;
-    background-color: rgba(24, 24, 27, 0.75);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
+    width: 420px;
+    height: 65vh;
+    min-height: 500px;
+    background: rgba(18, 18, 22, 0.55);
+    backdrop-filter: blur(36px) saturate(180%);
+    -webkit-backdrop-filter: blur(36px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    /* 厚玻璃投影与边缘高光 */
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        0 24px 60px rgba(0, 0, 0, 0.6);
     display: flex;
     flex-direction: column;
-    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
     overflow: hidden;
 }
 
+/* 入场动画：沉稳的缩放淡入，去除位移以精准对齐 */
 .pop-up-enter-active,
 .pop-up-leave-active {
     transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
@@ -374,12 +381,12 @@ watch(visible, (newVal) => { if (!newVal) stopGeneration() });
 }
 
 .panel-header {
-    padding: 16px 20px;
-    background-color: rgba(9, 9, 11, 0.5);
+    padding: 18px 24px;
+    background: rgba(5, 5, 7, 0.4);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    color: #fafafa;
+    color: #f4f4f5;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 15px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -394,11 +401,11 @@ watch(visible, (newVal) => { if (!newVal) stopGeneration() });
 .header-left {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
 .close-btn {
-    color: #a1a1aa;
+    color: #71717a;
     transition: color 0.2s;
 }
 
@@ -415,7 +422,7 @@ watch(visible, (newVal) => { if (!newVal) stopGeneration() });
 
 .chat-history {
     flex: 1;
-    padding: 20px;
+    padding: 24px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -427,15 +434,14 @@ watch(visible, (newVal) => { if (!newVal) stopGeneration() });
 }
 
 .chat-history::-webkit-scrollbar-thumb {
-    background: #3f3f46;
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 2px;
 }
 
-/* 聊天气泡 (Apple iMessage 风格变体) */
 .message-wrapper {
     display: flex;
-    gap: 12px;
-    max-width: 90%;
+    gap: 14px;
+    max-width: 88%;
 }
 
 .is-user {
@@ -448,14 +454,14 @@ watch(visible, (newVal) => { if (!newVal) stopGeneration() });
 }
 
 .avatar {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 600;
-    font-size: 11px;
+    font-size: 12px;
     flex-shrink: 0;
 }
 
@@ -465,18 +471,20 @@ watch(visible, (newVal) => { if (!newVal) stopGeneration() });
 }
 
 .is-ai .avatar {
-    background: #27272a;
-    color: #fafafa;
+    background: rgba(255, 255, 255, 0.05);
+    color: #f4f4f5;
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* 气泡质感：放弃高反差，采用舒适阅读色 */
 .message-bubble {
-    padding: 12px 16px;
-    border-radius: 18px;
-    line-height: 1.5;
+    padding: 14px 18px;
+    border-radius: 16px;
+    line-height: 1.6;
     font-size: 14px;
     position: relative;
     word-break: break-word;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .is-user .message-bubble {
@@ -486,7 +494,7 @@ watch(visible, (newVal) => { if (!newVal) stopGeneration() });
 }
 
 .is-ai .message-bubble {
-    background: rgba(39, 39, 42, 0.8);
+    background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.05);
     color: #e4e4e7;
     border-bottom-left-radius: 4px;
@@ -496,7 +504,7 @@ watch(visible, (newVal) => { if (!newVal) stopGeneration() });
     display: inline-block;
     width: 2px;
     height: 14px;
-    background-color: #fafafa;
+    background-color: #f4f4f5;
     margin-left: 2px;
     vertical-align: middle;
     animation: blink 1s step-end infinite;
@@ -508,24 +516,24 @@ watch(visible, (newVal) => { if (!newVal) stopGeneration() });
     }
 }
 
-/* 输入区 */
+/* 输入区：嵌入式深色毛玻璃 */
 .input-area {
-    padding: 16px;
-    background-color: rgba(9, 9, 11, 0.8);
+    padding: 20px;
+    background: rgba(5, 5, 7, 0.6);
     border-top: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
-    gap: 10px;
+    gap: 12px;
     align-items: flex-end;
 }
 
 :deep(.cyber-textarea .el-textarea__inner) {
-    background-color: #18181b !important;
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) inset !important;
-    color: #fafafa !important;
+    background: rgba(0, 0, 0, 0.3) !important;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset !important;
+    color: #f4f4f5 !important;
     border-radius: 12px;
-    padding: 10px 14px;
-    resize: none;
+    padding: 12px 16px;
     font-family: inherit;
+    resize: none;
 }
 
 :deep(.cyber-textarea .el-textarea__inner:focus) {
@@ -533,11 +541,11 @@ watch(visible, (newVal) => { if (!newVal) stopGeneration() });
 }
 
 .cyber-btn {
-    background-color: #27272a;
+    background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    height: 44px;
-    width: 44px;
-    border-radius: 50%;
+    height: 48px;
+    width: 48px;
+    border-radius: 14px;
     padding: 0;
     display: flex;
     justify-content: center;
@@ -546,22 +554,25 @@ watch(visible, (newVal) => { if (!newVal) stopGeneration() });
 }
 
 .send-btn {
-    color: #fafafa;
+    color: #f4f4f5;
 }
 
 .send-btn:hover {
-    background-color: #3b82f6;
+    background: #3b82f6;
     border-color: #3b82f6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .stop-btn {
-    border-color: rgba(239, 68, 68, 0.5);
+    border-color: rgba(239, 68, 68, 0.4);
     color: #ef4444;
 }
 
 .stop-btn:hover {
-    background-color: #ef4444;
+    background: #ef4444;
     color: #fff;
+    border-color: #ef4444;
 }
 
 /* Markdown 覆写 */
@@ -582,5 +593,6 @@ watch(visible, (newVal) => { if (!newVal) stopGeneration() });
 :deep(.markdown-body strong) {
     font-weight: 600;
     color: #fff;
+    text-shadow: none;
 }
 </style>

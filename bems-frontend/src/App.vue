@@ -117,20 +117,17 @@ provide('callBemsAi', triggerAiWithContext)
 </script>
 
 <style>
-/* --- 高级黑曜石 (Premium Obsidian) 全局变量 --- */
+/* --- 黑曜石磨砂 (Obsidian Glass) 核心变量 --- */
 :root {
-  --bg-dark: #09090b;
-  /* 极深锌灰 */
-  --panel-bg: rgba(24, 24, 27, 0.65);
-  /* 沉稳的半透明面板 */
+  --bg-dark: #050507;
+  --glass-bg: rgba(22, 22, 26, 0.45);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-rim: rgba(255, 255, 255, 0.12);
+  /* 模拟受光切面 */
   --accent-primary: #3b82f6;
-  /* 静谧蓝 */
   --accent-green: #10b981;
-  /* 翠玉绿 */
-  --border-color: rgba(255, 255, 255, 0.08);
-  /* 极细磨砂边框 */
-  --text-main: #fafafa;
-  --text-muted: #a1a1aa;
+  --text-main: #f4f4f5;
+  --text-muted: #71717a;
 }
 
 body,
@@ -139,7 +136,7 @@ html {
   padding: 0;
   background-color: var(--bg-dark);
   color: var(--text-main);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
   overflow: hidden;
 }
 
@@ -148,6 +145,29 @@ html {
   width: 100vw;
   height: 100vh;
   position: relative;
+}
+
+/* 🚀 核心：注入微米级噪点背景，消除塑料感 */
+.app-container::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.015;
+  /* 极低透明度，若隐若现 */
+  pointer-events: none;
+}
+
+/* 🚀 极致细节：全局注入 1% 噪点，消除数码味 */
+.app-container::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.015;
+  pointer-events: none;
 }
 
 /* --- 极简背景 --- */
@@ -187,16 +207,14 @@ html {
   background-size: 40px 40px;
 }
 
-/* --- 高级侧边栏 --- */
+/* 侧边栏：极致通透的悬浮玻璃 */
 .sidebar-wrapper {
   width: 240px;
-  background: var(--panel-bg);
-  backdrop-filter: blur(20px);
-  border-right: 1px solid var(--border-color);
-  display: flex;
-  flex-direction: column;
+  background: rgba(12, 12, 14, 0.4);
+  backdrop-filter: blur(32px) saturate(160%);
+  -webkit-backdrop-filter: blur(32px) saturate(160%);
+  border-right: 1px solid var(--glass-border);
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
   z-index: 10;
 }
 
@@ -205,19 +223,17 @@ html {
 }
 
 .sidebar-logo {
-  height: 64px;
+  height: 80px;
   display: flex;
   align-items: center;
-  padding: 0 18px;
-  gap: 12px;
-  overflow: hidden;
+  padding: 0 24px;
+  gap: 14px;
 }
 
 .logo-text {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-main);
-  white-space: nowrap;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
   letter-spacing: 0.5px;
 }
 
@@ -226,23 +242,24 @@ html {
   flex: 1;
 }
 
+/* 菜单项：取消发光，改用深度阴影 */
 .el-menu-item {
-  height: 50px !important;
-  margin: 8px 12px;
-  border-radius: 6px;
-  transition: all 0.2s;
+  height: 48px !important;
+  margin: 8px 16px;
+  border-radius: 12px;
   color: var(--text-muted) !important;
+  transition: all 0.2s;
+}
+
+.el-menu-item.is-active {
+  background: rgba(59, 130, 246, 0.08) !important;
+  color: var(--accent-primary) !important;
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.2);
 }
 
 .el-menu-item:hover {
   background: rgba(255, 255, 255, 0.04) !important;
-  color: var(--text-main) !important;
-}
-
-.el-menu-item.is-active {
-  background: rgba(59, 130, 246, 0.1) !important;
-  color: var(--accent-primary) !important;
-  font-weight: 600;
+  color: #fff !important;
 }
 
 .collapse-trigger {
@@ -272,11 +289,12 @@ html {
 
 .top-header {
   height: 64px;
-  padding: 0 30px;
+  padding: 0 32px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--glass-border);
+  background: rgba(5, 5, 7, 0.3);
+  backdrop-filter: blur(10px);
 }
 
 .breadcrumb-current {

@@ -570,24 +570,28 @@ onMounted(() => {
   flex-direction: column;
 }
 
+/* 🚀 极致磨砂：控制面板 */
 .filter-panel {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--panel-bg);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 16px 24px;
-  margin-bottom: 20px;
   flex-wrap: wrap;
-  gap: 15px;
+  gap: 20px;
+  background: rgba(22, 22, 26, 0.45);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 24px 32px;
+  /* 加大呼吸感 */
+  margin-bottom: 24px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 12px 40px rgba(0, 0, 0, 0.4);
 }
 
 .filter-left {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 28px;
   flex-wrap: wrap;
 }
 
@@ -597,176 +601,145 @@ onMounted(() => {
 }
 
 .filter-label {
-  color: var(--text-muted);
-  margin-right: 12px;
+  color: #71717a;
+  margin-right: 14px;
   font-weight: 500;
   font-size: 13px;
   white-space: nowrap;
 }
 
-.custom-select {
-  width: 220px;
-}
-
-.date-range-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
+/* 控件深层覆写 */
+.custom-select,
 .custom-date-range {
-  width: 300px;
-}
-
-.reset-btn {
-  padding: 8px;
-  color: var(--text-muted);
-  background: transparent;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-}
-
-.reset-btn:hover {
-  color: var(--text-main);
-  background: rgba(255, 255, 255, 0.05);
+  width: 240px;
 }
 
 :deep(.el-input__wrapper),
 :deep(.el-range-editor.el-input__wrapper) {
-  background-color: #18181b !important;
-  box-shadow: 0 0 0 1px var(--border-color) inset !important;
-  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset !important;
+  border-radius: 10px;
 }
 
 :deep(.el-input__inner),
 :deep(.el-range-input) {
-  color: var(--text-main) !important;
+  color: #f4f4f5 !important;
   font-weight: 500;
 }
 
 :deep(.el-range-separator) {
-  color: var(--text-muted);
+  color: #71717a;
 }
 
-:deep(.el-date-table td) {
-  padding: 0 !important;
-}
-
-.custom-cell {
-  width: 100%;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 2px 0;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-.custom-cell.is-start,
-.custom-cell.is-end {
-  background-color: var(--accent-primary) !important;
-  color: #fff !important;
-  font-weight: 600;
-  z-index: 2;
-}
-
-.custom-cell.is-in-range {
-  background-color: rgba(59, 130, 246, 0.15) !important;
-  color: var(--text-main) !important;
-}
-
-.custom-cell.is-disabled-visual .cell-text {
-  color: #52525b;
-}
-
-.cell-text {
-  z-index: 10;
-  font-size: 13px;
-}
-
-.energy-bar {
-  position: absolute;
-  bottom: 4px;
-  height: 3px;
-  border-radius: 2px;
-}
-
+/* 按钮组 */
 .cyber-btn {
-  background-color: #27272a;
-  border: 1px solid var(--border-color);
-  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #f4f4f5;
   font-weight: 500;
-  border-radius: 6px;
+  border-radius: 10px;
+  padding: 0 20px;
+  height: 36px;
   transition: all 0.2s;
 }
 
 .search-btn {
-  background: var(--accent-primary);
+  background: #3b82f6;
   color: #fff;
   border: none;
 }
 
 .search-btn:hover {
   background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
-.export-btn {
-  background: #18181b;
-  border-color: var(--border-color);
-  color: var(--text-main);
-}
-
-.export-btn:hover {
-  background: #27272a;
-}
-
-.upload-btn {
-  background: transparent;
-  color: var(--text-muted);
-  border: 1px dashed var(--border-color);
-}
-
+.export-btn:hover,
 .upload-btn:hover {
-  color: var(--text-main);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
+/* 🚀 极致磨砂：表格容器 */
 .table-wrapper {
   flex: 1;
-  background: var(--panel-bg);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
   overflow: hidden;
+  background: rgba(22, 22, 26, 0.45);
+  backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 12px 40px rgba(0, 0, 0, 0.4);
   padding: 1px;
+  /* 让内部表格贴合边框 */
 }
 
+/* 高级感表格重写 */
 .cyber-table {
-  --el-table-border-color: var(--border-color);
-  --el-table-header-bg-color: #09090b;
-  --el-table-header-text-color: var(--text-muted);
-  --el-table-tr-bg-color: transparent;
-  --el-table-row-hover-bg-color: rgba(255, 255, 255, 0.02);
+  --el-table-border-color: rgba(255, 255, 255, 0.04);
+  --el-table-header-bg-color: transparent;
   background-color: transparent !important;
 }
 
+/* ==========================================
+   🚀 终极修复：彻底剿灭表格深层的所有白色幽灵
+========================================== */
+
+/* 1. 彻底覆盖 JS 动态注入的 hover-row 类（这是核心元凶） */
+:deep(.el-table--enable-row-hover .el-table__body tr:hover > td.el-table__cell),
+:deep(.el-table .el-table__body tr.hover-row > td.el-table__cell) {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* 2. 如果开启了斑马纹，强制压制斑马纹的 Hover 状态 */
+:deep(.el-table--striped .el-table__body tr.el-table__row--striped:hover > td.el-table__cell),
+:deep(.el-table--striped .el-table__body tr.el-table__row--striped.hover-row > td.el-table__cell) {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* 3. 修复固定列 (Fixed Columns) 的纯白遮挡层 */
+:deep(.el-table .el-table__fixed),
+:deep(.el-table .el-table__fixed-right),
+:deep(.el-table .el-table__fixed-header-wrapper),
+:deep(.el-table .el-table__fixed-body-wrapper) {
+  background-color: transparent !important;
+}
+
+/* 4. 修复固定列在 Hover 时不同步变成白色的问题 */
+:deep(.el-table__fixed-body-wrapper .el-table__body tr:hover > td.el-table__cell),
+:deep(.el-table__fixed-body-wrapper .el-table__body tr.hover-row > td.el-table__cell) {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* 5. 干掉表格容器四周和固定列底部的绝对定位白线 */
+:deep(.el-table::before),
+:deep(.el-table::after),
+:deep(.el-table__inner-wrapper::before),
+:deep(.el-table__fixed::before),
+:deep(.el-table__fixed-right::before) {
+  display: none !important;
+}
+
+/* 6. 如果开启了单行点击高亮 (Highlight Current Row) */
+:deep(.el-table .current-row > td.el-table__cell) {
+  background-color: rgba(59, 130, 246, 0.12) !important;
+  /* 给予淡淡的品牌蓝 */
+}
+
 :deep(.el-table th.el-table__cell) {
-  background-color: rgba(9, 9, 11, 0.8) !important;
-  border-bottom: 1px solid var(--border-color) !important;
+  background-color: rgba(0, 0, 0, 0.2) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  color: #71717a;
   font-size: 13px;
   font-weight: 600;
+  padding: 14px 0;
 }
 
 :deep(.el-table td.el-table__cell) {
   border-bottom: 1px solid rgba(255, 255, 255, 0.03) !important;
-  color: var(--text-main);
-  font-size: 13px;
-}
-
-:deep(.el-table .el-table__fixed-right) {
-  background-color: transparent !important;
+  color: #f4f4f5;
+  font-size: 14px;
+  padding: 16px 0;
 }
 
 :deep(.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell) {
@@ -779,261 +752,122 @@ onMounted(() => {
   background-color: transparent !important;
 }
 
+/* 标签精修 */
 .cyber-tag {
   border: none;
-  font-weight: 500;
-  padding: 0 10px;
-  border-radius: 4px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 6px;
 }
 
 .warning-tag {
-  background-color: rgba(245, 158, 11, 0.15);
+  background-color: rgba(245, 158, 11, 0.1);
   color: #f59e0b;
 }
 
 .danger-tag {
-  background-color: rgba(239, 68, 68, 0.15);
+  background-color: rgba(239, 68, 68, 0.1);
   color: #ef4444;
 }
 
+/* 分页器精修 */
 .pagination-wrapper {
-  margin-top: 20px;
+  margin-top: 24px;
   display: flex;
   justify-content: flex-end;
-  background: transparent;
-  padding: 0;
-  border: none;
 }
 
 .cyber-pagination {
   --el-pagination-bg-color: transparent;
-  --el-pagination-text-color: var(--text-muted);
-  --el-pagination-button-color: var(--text-muted);
-  --el-pagination-button-disabled-color: #3f3f46;
-  --el-pagination-hover-color: var(--text-main);
+  --el-pagination-text-color: #71717a;
+  --el-pagination-button-color: #71717a;
+  --el-pagination-hover-color: #f4f4f5;
 }
 
 :deep(.el-pager li.is-active) {
-  color: var(--text-main);
+  color: #fff;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
 }
 
-/* 导出面板 */
+/* ==========================================
+   🚀 彻底洗掉表格内所有残留的霓虹光晕
+========================================== */
+:deep(.el-table [class*="glow"]),
+:deep(.el-table .cyan-glow),
+:deep(.el-table .time-text),
+:deep(.el-table td .cell span) {
+  text-shadow: none !important;
+  color: #f4f4f5 !important;
+}
+
+:deep(.el-table td.el-table__cell) {
+  font-family: 'Inter', 'JetBrains Mono', monospace;
+  letter-spacing: 0.5px;
+}
+
+:deep(.el-table .time-column-text) {
+  color: #a1a1aa !important;
+  /* 沉稳的银灰色 */
+  font-weight: 500;
+}
+
+/* 对话框/导出面板：同样采用厚玻璃 */
 :deep(.cyber-dialog) {
-  background-color: #18181b !important;
+  background: rgba(18, 18, 22, 0.85) !important;
+  backdrop-filter: blur(40px) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-  border-radius: 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 30px 60px rgba(0, 0, 0, 0.6) !important;
+  border-radius: 20px;
 }
 
 :deep(.cyber-dialog .el-dialog__header) {
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 20px 24px;
 }
 
 :deep(.cyber-dialog .el-dialog__title) {
-  color: #fafafa;
+  color: #fff;
   font-weight: 600;
   font-size: 16px;
 }
 
 :deep(.cyber-dialog .el-dialog__footer) {
   border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.export-desc {
-  color: var(--text-muted);
-  margin-bottom: 16px;
-  font-size: 13px;
+  padding: 20px 24px;
 }
 
 .export-radio-group {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
+  margin-top: 16px;
 }
 
 .cyber-radio {
   margin: 0 !important;
-  border: 1px solid var(--border-color) !important;
-  background: transparent;
-  border-radius: 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px !important;
   transition: all 0.2s;
-  padding: 0 16px;
-  height: 48px;
+  padding: 0 20px;
+  height: 56px;
 }
 
 .cyber-radio.is-bordered.is-checked {
-  border-color: var(--accent-primary) !important;
-  background: rgba(59, 130, 246, 0.05);
-}
-
-:deep(.cyber-radio .el-radio__inner) {
-  background-color: transparent;
-  border-color: #52525b;
-}
-
-:deep(.cyber-radio.is-checked .el-radio__inner) {
-  background-color: var(--accent-primary);
-  border-color: var(--accent-primary);
-}
-
-:deep(.cyber-radio .el-radio__label) {
-  color: #e4e4e7 !important;
-  font-weight: 500;
-}
-
-.data-count {
-  color: var(--text-muted);
-  font-size: 12px;
-  margin-left: 8px;
-}
-
-.custom-page-inputs {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 12px;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-}
-
-.custom-page-inputs span {
-  color: var(--text-muted);
-  font-size: 13px;
-}
-
-:deep(.cyber-input-number .el-input__wrapper) {
-  background-color: #09090b !important;
-}
-
-/* 赛博风复选框样式重置 */
-:deep(.cyber-checkbox-group .el-checkbox__input.is-checked .el-checkbox__inner) {
-  background-color: var(--accent-primary);
-  border-color: var(--accent-primary);
-}
-
-:deep(.cyber-checkbox-group .el-checkbox__input.is-checked + .el-checkbox__label) {
-  color: var(--text-main);
-  text-shadow: none;
-  font-weight: 500;
-}
-
-/* ==========================================
-   🚀 深度洗掉表格内所有残留的霓虹光晕
-========================================== */
-/* 强制覆盖表格内任何带有 glow 字样的类名或时间列 */
-:deep(.el-table [class*="glow"]),
-:deep(.el-table .cyan-glow),
-:deep(.el-table .time-text),
-:deep(.el-table td .cell span) {
-  text-shadow: none !important;
-  /* 彻底干掉发光 */
-  color: var(--text-main) !important;
-  /* 统一为高级锌白色 */
-}
-
-/* 专门针对“记录时间”等数据列，增加高级的等宽字体排版感 */
-:deep(.el-table td.el-table__cell) {
-  font-family: 'Inter', 'JetBrains Mono', monospace;
-  letter-spacing: 0.5px;
-}
-
-/* 如果你的时间列有特定的绿色/蓝色高亮需求，用背景色代替发光，更符合黑曜石风格 */
-:deep(.el-table .time-column-text) {
-  color: #a1a1aa !important;
-  /* 沉稳的次级灰色 */
-  font-weight: 500;
+  border-color: #3b82f6 !important;
+  background: rgba(59, 130, 246, 0.1);
 }
 </style>
 
 <style>
-/* 日历强制覆写 */
-.el-month-table .cyber-cell-text {
-  font-size: 0 !important;
-}
-
-.el-month-table .cyber-cell-text[data-text="0"]::after {
-  content: "1月";
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.el-month-table .cyber-cell-text[data-text="1"]::after {
-  content: "2月";
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.el-month-table .cyber-cell-text[data-text="2"]::after {
-  content: "3月";
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.el-month-table .cyber-cell-text[data-text="3"]::after {
-  content: "4月";
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.el-month-table .cyber-cell-text[data-text="4"]::after {
-  content: "5月";
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.el-month-table .cyber-cell-text[data-text="5"]::after {
-  content: "6月";
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.el-month-table .cyber-cell-text[data-text="6"]::after {
-  content: "7月";
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.el-month-table .cyber-cell-text[data-text="7"]::after {
-  content: "8月";
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.el-month-table .cyber-cell-text[data-text="8"]::after {
-  content: "9月";
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.el-month-table .cyber-cell-text[data-text="9"]::after {
-  content: "10月";
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.el-month-table .cyber-cell-text[data-text="10"]::after {
-  content: "11月";
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.el-month-table .cyber-cell-text[data-text="11"]::after {
-  content: "12月";
-  font-size: 13px;
-  font-weight: 500;
-}
-
+/* 日历组件去霓虹并修复遮挡 */
 :deep(.el-year-table td .cell),
 :deep(.el-month-table td .cell) {
   padding: 0 !important;
   height: 40px !important;
-  position: relative !important;
 }
 
 .custom-cell {
@@ -1043,14 +877,54 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 8px;
 }
 
-.energy-bar {
-  position: absolute;
-  bottom: 4px;
-  height: 3px;
-  border-radius: 2px;
-  left: 50%;
-  transform: translateX(-50%);
+.custom-cell.is-start,
+.custom-cell.is-end {
+  background-color: #3b82f6 !important;
+  color: #fff !important;
+}
+
+.custom-cell.is-in-range {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+  color: #f4f4f5 !important;
+}
+
+/* ==========================================
+   🚀 修复：日期选择器范围高亮对比度
+========================================== */
+/* 修复选中范围内的背景和字体颜色 */
+.el-date-table td.in-range .el-date-table-cell {
+  background-color: rgba(59, 130, 246, 0.25) !important;
+  /* 加深一点背景蓝 */
+}
+
+.el-date-table td.in-range .el-date-table-cell__text,
+.el-date-table td.in-range .custom-cell .cell-text {
+  color: #ffffff !important;
+  /* 强制文字纯白 */
+  font-weight: 500 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  /* 增加极细的黑色文字阴影，使其在蓝底上更锐利 */
+}
+
+/* 修复起点和终点（选中那两天的首尾）的高亮颜色 */
+.el-date-table td.start-date .el-date-table-cell__text,
+.el-date-table td.end-date .el-date-table-cell__text,
+.el-date-table td.start-date .custom-cell .cell-text,
+.el-date-table td.end-date .custom-cell .cell-text {
+  background-color: #3b82f6 !important;
+  /* 静谧蓝主体色 */
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  border-radius: 50% !important;
+  /* 保证高亮是个圆润的圈 */
+}
+
+/* 确保今日（Today）的文字也能看清 */
+.el-date-table td.today .el-date-table-cell__text {
+  color: #3b82f6 !important;
+  font-weight: 700;
 }
 </style>
