@@ -76,7 +76,7 @@
         <div class="kpi-title">
           {{ kpi.title }}
 
-          <el-popover v-if="kpi.title === '空调系统综合 COP'" placement="bottom-start" width="280" trigger="hover"
+          <el-popover v-if="kpi.title === '全局冷量综合 COP'" placement="bottom-start" width="280" trigger="hover"
             :teleported="true" popper-class="cyber-popover">
             <template #reference>
               <el-icon class="help-icon">
@@ -222,7 +222,7 @@ let projectedParkElecCache = 1;
 const kpiData = reactive([
   { title: '区间总耗电量', value: '0', unit: 'kWh', color: '#00F0FF', glowClass: 'cyan-glow', trend: 'up', desc: '基于动态区间测算' },
   { title: '区间总冷负荷', value: '0', unit: 'kWh', color: '#7359FF', glowClass: 'purple-glow', trend: 'up', desc: '冷水当量转换值' },
-  { title: '空调系统综合 COP', value: '0.00', unit: 'W/W', color: '#00FF9D', glowClass: 'green-glow', trend: 'up', desc: '系统整体能效健康' },
+  { title: '全局冷量综合 COP', value: '0.00', unit: 'W/W', color: '#00FF9D', glowClass: 'green-glow', trend: 'up', desc: '宏观制冷能效评估' },
   { title: '活跃异常告警', value: '0', unit: '次', color: '#FF4D4F', glowClass: 'red-glow', trend: 'alert', desc: '亟需人工辅助诊断' }
 ])
 
