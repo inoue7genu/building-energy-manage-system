@@ -2,7 +2,8 @@
   <div class="dashboard-container">
 
     <div class="global-control bento-panel">
-      <div class="control-left">
+      <div class="control-left" style="width: 100%;">
+
         <div class="control-item">
           <span class="control-label">监控节点</span>
           <el-select v-model="currentBuilding" @change="fetchCalendarAndRender" class="building-select" effect="dark">
@@ -61,11 +62,12 @@
               </el-icon>
             </el-button>
           </el-button-group>
-        </div>
-      </div>
 
-      <div class="control-right">
-        当前态势：<span class="data-date">{{ currentDataDate }}</span>
+          <div class="inline-status">
+            当前态势：<span class="data-date">{{ currentDataDate }}</span>
+          </div>
+
+        </div>
       </div>
     </div>
 
@@ -797,11 +799,17 @@ onUnmounted(() => {
   width: 220px;
 }
 
-.control-right {
+.inline-status {
+  display: flex;
+  align-items: center;
   color: #a0a2b8;
   font-size: 14px;
   white-space: nowrap;
-  flex-shrink: 0;
+
+  /* 在日期选择器和这段文字之间划一条紫色的分割线 */
+  margin-left: 20px;
+  padding-left: 20px;
+  border-left: 1px solid rgba(115, 89, 255, 0.4);
 }
 
 .data-date {
