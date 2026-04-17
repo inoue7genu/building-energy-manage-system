@@ -32,7 +32,6 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/energy")
-@CrossOrigin(origins = "*")
 public class BuildingEnergyRecordController {
 
     @Autowired
