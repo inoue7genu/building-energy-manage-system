@@ -31,6 +31,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Monitor, User, Lock } from '@element-plus/icons-vue' // 确保引入了图标
 import { ElMessage } from 'element-plus'
+import request from '../utils/request'
 
 const router = useRouter()
 const loading = ref(false)
@@ -44,16 +45,41 @@ onMounted(() => {
     }
 })
 
-const handleLogin = () => {
-    if (loginForm.value.username === 'admin' && loginForm.value.password === '123456') {
+// 🚀 核心改造：使用 async/await 发送真实网络请求
+const handleLogin = async () => {
+    if (!loginForm.value.username || !loginForm.value.password) {
+        ElMessage.warning('请输入账号和密码')
+        return
+    }
+
+    try {
         loading.value = true
-        localStorage.setItem('bems-token', 'mock-token-123456')
-        ElMessage.success('欢迎回来，管理员')
-        setTimeout(() => {
-            router.push('/dashboard')
-        }, 800)
-    } else {
-        ElMessage.error('账号或密码错误')
+
+        // 🚀 向 Spring Boot 发送 POST 请求
+        const res = await request.post('/login', {
+            username: loginForm.value.username,
+            password: loginForm.value.password
+        })
+
+        // 根据后端返回的 code 判断是否成功
+        if (res.code === 200) {
+            // 1. 把后端发的真实 Token 存起来
+            localStorage.setItem('bems-token', res.token)
+
+            // 2. 提示欢迎信息（包含后端查出的真实昵称）
+            ElMessage.success(`欢迎回来，${res.nickname || '管理员'}`)
+
+            setTimeout(() => {
+                router.push('/dashboard')
+            }, 800)
+        } else {
+            // 登录失败（如密码错误）
+            ElMessage.error(res.msg)
+        }
+    } catch (error) {
+        console.error('登录请求报错:', error)
+    } finally {
+        loading.value = false
     }
 }
 </script>

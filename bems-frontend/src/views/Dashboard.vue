@@ -92,7 +92,7 @@
               </div>
               <div class="explainer-text">
                 💡 <b>通俗理解：</b><br />
-                空调相当于“热量搬运工”。当前消耗 1 块钱的电费，能为您搬走相当于 <b class="hl-purple">{{ kpi.value }}</b> 块钱的热量。<br />
+                当前消耗 1 块钱的电费，能为您搬走相当于 <b class="hl-purple">{{ kpi.value }}</b> 块钱的热量。<br />
                 <div style="margin-top: 5px;">
                   状态：<span :class="kpi.value >= 3.5 ? 'hl-green' : 'hl-orange'">
                     {{ kpi.value >= 3.5 ? '高效节能 (极度省钱) 🌟' : '效率一般 (存在优化空间) ⚠️' }}
