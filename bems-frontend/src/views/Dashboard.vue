@@ -761,11 +761,18 @@ onUnmounted(() => {
 /* 悬浮中控台 */
 .global-control {
   position: sticky;
-  top: -30px;
+  top: -24px;
+  /* 🚀 完美贴合 App.vue 中 content-view 的 24px 顶边距 */
   z-index: 2000;
-  margin: -30px -20px 24px -20px;
-  width: calc(100% + 40px);
-  padding: 20px 40px;
+
+  /* 🚀 利用负边距自动撑满父级容器，彻底删掉那个搞破坏的 width 属性 */
+  margin: -24px -24px 24px -24px;
+
+  padding: 16px 24px;
+  /* 适当缩小一点内边距，让内容更紧凑 */
+  box-sizing: border-box;
+  /* 🚀 核心防御：强制让 padding 向内挤压，而不是向外撑破容器 */
+
   background: var(--bems-glass-header) !important;
   backdrop-filter: blur(40px) brightness(1.1);
   border-bottom: 1px solid var(--bems-rim-light);
