@@ -63,14 +63,19 @@ const handleLogin = async () => {
 
         // 根据后端返回的 code 判断是否成功
         if (res.code === 200) {
-            // 1. 把后端发的真实 Token 存起来
+            // 1. 存储 token 和角色
             localStorage.setItem('bems-token', res.token)
+            localStorage.setItem('bems-role', res.role) // 🚀 这一步至关重要！
 
-            // 2. 提示欢迎信息（包含后端查出的真实昵称）
             ElMessage.success(`欢迎回来，${res.nickname || '管理员'}`)
 
+            // 2. 根据角色决定跳转去哪
             setTimeout(() => {
-                router.push('/dashboard')
+                if (res.role === 'ADMIN') {
+                    router.push('/admin-hub') // 管理员去中枢
+                } else {
+                    router.push('/dashboard') // 普通用户去看板
+                }
             }, 800)
         } else {
             // 登录失败（如密码错误）

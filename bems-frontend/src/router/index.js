@@ -2,10 +2,12 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Dashboard from '../views/Dashboard.vue'
 import DataQuery from '../views/DataQuery.vue'
 import Login from '../views/Login.vue' // 🚀 引入登录页
+import AdminHub from '../views/AdminHub.vue'
 
 const routes = [
   { path: '/login', name: 'Login', component: Login },
   { path: '/', redirect: '/dashboard' },
+  { path: '/admin-hub', name: 'AdminHub', component: AdminHub, meta: { requiresAuth: true } },
   {
     path: '/dashboard',
     name: 'Dashboard',
@@ -25,18 +27,22 @@ const router = createRouter({
   routes
 })
 
-// 🚀 核心修复：使用 Vue Router 4 的最新 return 语法，彻底告别卡死！
+// 🚀 升级版路由守卫：实现智能分流与安全拦截
 router.beforeEach((to, from) => {
   const token = localStorage.getItem('bems-token')
+  const role = localStorage.getItem('bems-role') // 🚀 获取当前用户角色
 
   if (to.meta.requiresAuth && !token) {
-    // 没登录，想进后台 -> 踹回登录页
     return '/login'
   } else if (to.path === '/login' && token) {
-    // 登了录，还想回登录页 -> 送回大屏
-    return '/dashboard'
+    // 🚀 根据角色决定已登录后的“家”在哪
+    return role === 'ADMIN' ? '/admin-hub' : '/dashboard'
   }
-  // 其他情况自动放行，不需要写 return
+
+  // 🚀 如果管理员访问根路径 /，也自动送往中枢
+  if (to.path === '/' && token && role === 'ADMIN') {
+    return '/admin-hub'
+  }
 })
 
 export default router

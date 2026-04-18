@@ -16,6 +16,14 @@
 
       <el-menu :default-active="activeIndex" class="side-menu" router :collapse="isCollapsed"
         background-color="transparent" text-color="#a0a2b8" active-text-color="#00F0FF">
+
+        <el-menu-item index="/admin-hub" v-if="userRole === 'ADMIN'">
+          <el-icon>
+            <Platform />
+          </el-icon>
+          <template #title>管理中枢系统</template>
+        </el-menu-item>
+
         <el-menu-item index="/dashboard">
           <el-icon>
             <DataLine />
@@ -102,7 +110,8 @@ import { useRoute, useRouter } from 'vue-router'
 import {
   DataLine, Search, Monitor,
   Timer, Fold, Expand,
-  Sunny, Moon, ArrowDown, SwitchButton
+  Sunny, Moon, ArrowDown, SwitchButton,
+  Platform
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import GlobalAiAssistant from './components/GlobalAiAssistant.vue'
@@ -113,10 +122,28 @@ const router = useRouter() // 🚀 获取路由跳转能力
 // 🚀 新增：用来判断当前是不是登录页
 const isLoginPage = computed(() => route.path === '/login')
 
+const userRole = computed(() => localStorage.getItem('bems-role'))
+
 
 const isCollapsed = ref(false)
 const aiAssistantRef = ref(null)
 const currentTime = ref('')
+
+const menuItems = computed(() => {
+  const baseMenu = [
+    { name: '能效态势看板', path: '/dashboard', icon: 'DataLine' },
+    { name: '数据中心与报表', path: '/query', icon: 'Search' }
+  ]
+
+  // 🚀 如果是管理员，把“管理中枢”插到最前面
+  if (userRole.value === 'ADMIN') {
+    return [
+      { name: '管理中枢系统', path: '/admin-hub', icon: 'Platform' },
+      ...baseMenu
+    ]
+  }
+  return baseMenu
+})
 
 // 🚀 处理下拉菜单的点击事件
 const handleCommand = (command) => {
