@@ -14,4 +14,7 @@ public class User {
     private String username;
     private String password;
     private String nickname;
+
+    // 🚀 新增：对应数据库里的 role 字段
+    private String role;
 }

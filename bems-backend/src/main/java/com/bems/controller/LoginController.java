@@ -39,6 +39,10 @@ public class LoginController {
             res.put("token", "BEMS-AUTH-TOKEN-" + UUID.randomUUID());
             res.put("msg", "登录成功");
             res.put("nickname", loginUser.getNickname()); // 把昵称也传给前端
+
+            // 🚀 核心新增：把数据库里查到的权限身份，明明白白地发给前端！
+            res.put("role", loginUser.getRole());
+
             return res;
         }
 
