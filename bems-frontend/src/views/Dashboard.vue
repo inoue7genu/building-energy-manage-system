@@ -5,7 +5,7 @@
       <div class="control-left" style="width: 100%;">
 
         <div class="control-item">
-          <span class="control-label">监控节点:Panther 教育核心园区</span>
+          <span class="control-label">监控节点:Pan园区</span>
           <el-select v-model="currentBuilding" @change="fetchCalendarAndRender" class="building-select" effect="dark">
             <el-option label="Panther 办公楼 (Karla)" value="Panther_office_Karla" />
             <el-option label="Panther 教育楼 (Vincent)" value="Panther_education_Vincent" />

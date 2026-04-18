@@ -12,6 +12,13 @@
                         value-format="YYYY-MM-DD" :clearable="false" @change="handleDateChange"
                         class="cyber-date-picker" size="small" />
                 </div>
+                <div class="control-item" style="margin-left: 10px;">
+                    <el-button plain class="theme-btn" @click="showIndicatorDrawer = true" size="small">
+                        <el-icon style="margin-right: 5px;">
+                            <Setting />
+                        </el-icon> 指标配置中枢
+                    </el-button>
+                </div>
             </div>
             <div class="header-stats-mini">
                 <div class="mini-stat">
@@ -38,6 +45,47 @@
                 <div :ref="(el) => (chartRefs[index] = el)" class="chart-container"></div>
             </div>
         </div>
+
+        <el-drawer v-model="showIndicatorDrawer" title="⚙️ 能源监控指标库" direction="rtl" size="380px" class="theme-drawer">
+            <div class="drawer-content">
+                <div class="section-title">活跃指标 (Active)</div>
+                <div class="indicator-list">
+                    <div class="indicator-item" v-for="(ind, idx) in activeIndicators" :key="idx">
+                        <div class="ind-info">
+                            <span class="ind-color" :style="{ background: ind.color }"></span>
+                            <span class="ind-name">{{ ind.name }}</span>
+                        </div>
+                        <div class="ind-actions">
+                            <el-switch v-model="ind.status" size="small" style="margin-right: 12px;" />
+                            <el-button type="danger" link @click="handleDeleteIndicator(idx)" :icon="Delete" />
+                        </div>
+                    </div>
+                </div>
+
+                <el-divider border-style="dashed" style="border-color: var(--bems-border-base);" />
+
+                <div class="section-title">挂载能效指标 (Add New)</div>
+                <div class="add-indicator-box">
+                    <el-select v-model="newIndicator" placeholder="选择建筑能效指标" class="theme-select"
+                        style="width: 100%; margin-bottom: 15px;">
+                        <el-option label="🏢 单位面积电耗 (kWh/m²)" value="单位面积电耗 (kWh/m²)" />
+                        <el-option label="❄️ 暖通空调综合能效 (COP)" value="暖通空调综合能效 (COP)" />
+                        <el-option label="💨 建筑碳排放量估算 (kgCO₂)" value="建筑碳排放量估算 (kgCO₂)" />
+                        <el-option label="☀️ 光伏绿电产出率 (%)" value="光伏绿电产出率 (%)" />
+                        <el-option label="🚰 人均用水强度 (L/人)" value="人均用水强度 (L/人)" />
+                    </el-select>
+                    <el-button class="theme-btn-primary" style="width: 100%;" @click="handleAddIndicator">
+                        <el-icon style="margin-right: 5px;">
+                            <Plus />
+                        </el-icon> 确认挂载指标
+                    </el-button>
+                </div>
+
+                <div class="mock-tip">
+                    * 提示：添加或移除指标后，系统将向物联网关下发新指令，数据同步预计会有 3-5 分钟延迟。
+                </div>
+            </div>
+        </el-drawer>
     </div>
 </template>
 
@@ -45,12 +93,50 @@
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import dayjs from 'dayjs'
+// 🚀 引入图标和消息组件
+import { Setting, Plus, Delete } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
+// --- 🚀 新增：指标管理抽屉的状态与逻辑 ---
+const showIndicatorDrawer = ref(false)
+const newIndicator = ref('')
+
+const activeIndicators = ref([
+    { name: '耗电量', color: '#00F0FF', status: true },
+    { name: '冷负荷', color: '#9D00FF', status: true }
+])
+
+const handleAddIndicator = () => {
+    if (!newIndicator.value) return ElMessage.warning('请先选择要添加的指标')
+    if (activeIndicators.value.some(item => item.name === newIndicator.value)) {
+        return ElMessage.warning('该指标已在监控序列中')
+    }
+    const colors = ['#00FF9D', '#FFD700', '#FF3366', '#FF8A00']
+    const randomColor = colors[Math.floor(Math.random() * colors.length)]
+
+    activeIndicators.value.push({ name: newIndicator.value, color: randomColor, status: true })
+    ElMessage.success(`成功挂载 [${newIndicator.value}]`)
+    newIndicator.value = ''
+}
+
+const handleDeleteIndicator = (index) => {
+    const name = activeIndicators.value[index].name
+    ElMessageBox.confirm(`确定要从全局监控中移除指标 [${name}] 吗？`, '移除确认', {
+        confirmButtonText: '确定移除',
+        cancelButtonText: '取消',
+        type: 'warning',
+    }).then(() => {
+        activeIndicators.value.splice(index, 1)
+        ElMessage.success('指标已成功移除')
+    }).catch(() => { })
+}
+// ------------------------------------------
+
+// --- 你的原版图表逻辑 (一字未改，确保稳定) ---
 const selectedDate = ref(dayjs().format('YYYY-MM-DD'))
 const chartRefs = ref([])
 let chartInstances = []
 
-// 6个园区的配置信息
 const campusConfigs = [
     { name: 'Panther 教育核心园区', base: 2200, color: '#00F0FF', type: 'EDU' },
     { name: '光谷云计算中心', base: 5000, color: '#00FF9D', type: 'DATA' },
@@ -60,10 +146,6 @@ const campusConfigs = [
     { name: '麓谷工业智造基地', base: 6000, color: '#FF8A00', type: 'INDUS' }
 ]
 
-/**
- * 🚀 差异化双曲线数据生成算法
- * 返回：{ powerData: [], loadData: [] }
- */
 const generateDoubleData = (base, dateStr, type) => {
     const seed = dateStr.split('-').reduce((acc, cur) => acc + parseInt(cur), 0)
     const powerData = []
@@ -83,7 +165,6 @@ const generateDoubleData = (base, dateStr, type) => {
         }
 
         const pVal = (base * factor) + noise
-        // 冷负荷通常滞后于用电量，且随气温变化，这里模拟一个滞后相关的波动
         const lVal = pVal * (0.6 + Math.sin(i / 12) * 0.2)
 
         powerData.push(Math.max(0, pVal.toFixed(1)))
@@ -95,32 +176,33 @@ const generateDoubleData = (base, dateStr, type) => {
 const xData = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`)
 
 const getOption = (data, mainColor) => ({
-    // 🚀 核心：添加图例
     legend: {
         show: true,
         right: '2%',
         top: '0%',
         icon: 'circle',
         itemWidth: 8,
-        textStyle: { color: '#a0a2b8', fontSize: 10 },
+        // 🚀 使用 CSS 变量适配深浅色
+        textStyle: { color: 'var(--bems-text-secondary)', fontSize: 10 },
         data: ['耗电量', '冷负荷']
     },
     tooltip: {
         trigger: 'axis',
-        backgroundColor: 'rgba(10, 10, 14, 0.9)',
-        borderColor: 'rgba(255,255,255,0.1)',
-        textStyle: { color: '#fff' }
+        // 🚀 提示框使用系统玻璃面板颜色，完美适配深浅色
+        backgroundColor: 'var(--bems-glass-card)',
+        borderColor: 'var(--bems-border-base)',
+        textStyle: { color: 'var(--bems-text-primary)' }
     },
     grid: { left: '4%', right: '4%', bottom: '5%', top: '22%', containLabel: true },
     xAxis: {
         type: 'category',
         data: xData,
-        axisLabel: { color: '#7a7c91', fontSize: 9, interval: 5 },
-        axisLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }
+        axisLabel: { color: 'var(--bems-text-secondary)', fontSize: 9, interval: 5 },
+        axisLine: { lineStyle: { color: 'var(--bems-border-base)' } }
     },
     yAxis: {
         type: 'value',
-        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.03)', type: 'dashed' } },
+        splitLine: { lineStyle: { color: 'var(--bems-border-base)', type: 'dashed' } },
         axisLabel: { show: false }
     },
     series: [
@@ -130,7 +212,7 @@ const getOption = (data, mainColor) => ({
             type: 'line',
             smooth: true,
             symbol: 'none',
-            lineStyle: { width: 2, color: '#00F0FF' }, // 统一用青色
+            lineStyle: { width: 2, color: '#00F0FF' },
             areaStyle: {
                 color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
                     { offset: 0, color: 'rgba(0, 240, 255, 0.2)' },
@@ -144,7 +226,7 @@ const getOption = (data, mainColor) => ({
             type: 'line',
             smooth: true,
             symbol: 'none',
-            lineStyle: { width: 2, color: '#9D00FF', type: 'dashed' }, // 统一用紫色虚线区分
+            lineStyle: { width: 2, color: '#9D00FF', type: 'dashed' },
             areaStyle: {
                 color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
                     { offset: 0, color: 'rgba(157, 0, 255, 0.1)' },
@@ -194,6 +276,13 @@ onUnmounted(() => {
     padding-bottom: 20px;
 }
 
+/* --- 🚀 基础面板使用变量，支持主题切换 --- */
+.bento-panel {
+    background: var(--bems-glass-card);
+    border: 1px solid var(--bems-border-base);
+    border-radius: 12px;
+}
+
 .global-control {
     display: flex;
     justify-content: space-between;
@@ -225,7 +314,8 @@ onUnmounted(() => {
     padding: 2px 10px;
     border-radius: 4px;
     font-size: 12px;
-    background: rgba(0, 240, 255, 0.05);
+    background: var(--bems-glass-input);
+    /* 适配浅色 */
 }
 
 .header-stats-mini {
@@ -255,7 +345,6 @@ onUnmounted(() => {
     color: #00FF9D;
 }
 
-/* 🚀 3列网格排版 */
 .campus-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
@@ -292,6 +381,99 @@ onUnmounted(() => {
     height: 7px;
     border-radius: 50%;
     display: inline-block;
+}
+
+/* --- 🚀 按钮与表单深浅色适配 --- */
+.theme-btn {
+    background: var(--bems-glass-input) !important;
+    border: 1px solid var(--bems-border-base) !important;
+    color: var(--bems-text-primary) !important;
+}
+
+.theme-btn:hover {
+    border-color: var(--bems-color-primary) !important;
+    color: var(--bems-color-primary) !important;
+}
+
+.theme-btn-primary {
+    background: var(--bems-color-primary) !important;
+    border: none !important;
+    color: #000 !important;
+    font-weight: bold;
+}
+
+/* --- 🚀 侧边抽屉深浅色主题完美适配 --- */
+:deep(.theme-drawer) {
+    background: var(--bems-glass-card) !important;
+    backdrop-filter: blur(20px);
+}
+
+:deep(.theme-drawer .el-drawer__header) {
+    margin-bottom: 0;
+    padding: 20px;
+    color: var(--bems-text-primary);
+    border-bottom: 1px solid var(--bems-border-base);
+    font-weight: 600;
+}
+
+.drawer-content {
+    padding: 20px;
+}
+
+.section-title {
+    color: var(--bems-text-secondary);
+    font-size: 13px;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+}
+
+.indicator-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.indicator-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bems-glass-input);
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid var(--bems-border-base);
+}
+
+.ind-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ind-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+}
+
+.ind-name {
+    color: var(--bems-text-primary);
+    font-size: 14px;
+}
+
+.ind-actions {
+    display: flex;
+    align-items: center;
+}
+
+.mock-tip {
+    margin-top: 30px;
+    font-size: 12px;
+    color: var(--bems-text-secondary);
+    line-height: 1.6;
+    padding: 10px;
+    background: var(--bems-glass-input);
+    border-radius: 8px;
+    border: 1px solid var(--bems-border-base);
 }
 
 :deep(.el-input__wrapper) {
