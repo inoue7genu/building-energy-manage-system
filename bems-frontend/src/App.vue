@@ -107,7 +107,7 @@
       </section>
     </main>
 
-    <GlobalAiAssistant ref="aiAssistantRef" />
+    <GlobalAiAssistant ref="aiAssistantRef" v-show="!isLoginPage" />
   </div>
 </template>
 
