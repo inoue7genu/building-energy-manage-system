@@ -23,7 +23,7 @@
             <div class="header-stats-mini">
                 <div class="mini-stat">
                     <span class="ss-label">网点在线率</span>
-                    <span class="ss-value active">100.0%</span>
+                    <span class="ss-value active">89.7%</span>
                 </div>
                 <el-divider direction="vertical" />
                 <div class="mini-stat">
@@ -254,14 +254,40 @@ const initAll = () => {
 
 const handleDateChange = () => initAll()
 
+// 🚀 新增一个观察者变量
+let resizeObserver = null
+
+const handleResize = () => {
+    chartInstances.forEach(c => c && c.resize())
+}
+
 onMounted(() => {
     nextTick(() => {
         initAll()
-        window.addEventListener('resize', () => chartInstances.forEach(c => c && c.resize()))
+
+        // 传统监听：浏览器窗口大小改变
+        window.addEventListener('resize', handleResize)
+
+        // 🚀 2. 高级监听：专门监听网格容器的物理宽度变化 (解决侧边栏收缩问题)
+        const gridContainer = document.querySelector('.campus-grid')
+        if (gridContainer) {
+            resizeObserver = new ResizeObserver(() => {
+                handleResize() // 一旦发现变宽或变窄，立刻重绘图表
+            })
+            resizeObserver.observe(gridContainer)
+        }
     })
 })
 
 onUnmounted(() => {
+    // 顺手帮你修了一个小 Bug：记得移除 window 的监听，防止内存泄漏
+    window.removeEventListener('resize', handleResize)
+
+    // 🚀 3. 清除容器监听器
+    if (resizeObserver) {
+        resizeObserver.disconnect()
+    }
+
     chartInstances.forEach(c => c && c.dispose())
 })
 </script>
@@ -374,6 +400,8 @@ onUnmounted(() => {
 .chart-container {
     flex: 1;
     width: 100%;
+    /* 🚀 核心防御：防止内部 canvas 把容器强行撑开导致重叠 */
+    overflow: hidden;
 }
 
 .dot {

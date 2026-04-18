@@ -67,7 +67,7 @@ const handleLogin = async () => {
             localStorage.setItem('bems-token', res.token)
             localStorage.setItem('bems-role', res.role) // 🚀 这一步至关重要！
 
-            ElMessage.success(`欢迎回来，${res.nickname || '管理员'}`)
+            ElMessage.success(`欢迎回来，${res.nickname || '用户'}`)
 
             // 2. 根据角色决定跳转去哪
             setTimeout(() => {
