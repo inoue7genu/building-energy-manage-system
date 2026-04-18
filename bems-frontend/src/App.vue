@@ -17,6 +17,13 @@
       <el-menu :default-active="activeIndex" class="side-menu" router :collapse="isCollapsed"
         background-color="transparent" text-color="#a0a2b8" active-text-color="#00F0FF">
 
+        <el-menu-item v-for="menu in menuList" :key="menu.path" :index="menu.path">
+          <el-icon>
+            <component :is="menu.icon" />
+          </el-icon>
+          <template #title>{{ menu.name }}</template>
+        </el-menu-item>
+
         <el-menu-item index="/admin-hub" v-if="userRole === 'ADMIN'">
           <el-icon>
             <Platform />
@@ -130,19 +137,20 @@ const aiAssistantRef = ref(null)
 const currentTime = ref('')
 
 const menuItems = computed(() => {
-  const baseMenu = [
-    { name: '能效态势看板', path: '/dashboard', icon: 'DataLine' },
-    { name: '数据中心与报表', path: '/query', icon: 'Search' }
+  // 1. 定义所有可能的菜单项
+  const allMenus = [
+    { name: '管理中枢系统', path: '/admin-hub', icon: 'Platform', role: 'ADMIN' },
+    { name: '能效态势看板', path: '/dashboard', icon: 'DataLine', role: 'ALL' },
+    { name: '数据中心与报表', path: '/query', icon: 'Search', role: 'ALL' }
   ]
 
-  // 🚀 如果是管理员，把“管理中枢”插到最前面
-  if (userRole.value === 'ADMIN') {
-    return [
-      { name: '管理中枢系统', path: '/admin-hub', icon: 'Platform' },
-      ...baseMenu
-    ]
-  }
-  return baseMenu
+  // 2. 核心修改：使用 filter 进行智能过滤
+  return allMenus.filter(item => {
+    // 如果菜单是 ALL，所有人都能看
+    if (item.role === 'ALL') return true
+    // 如果是 ADMIN 菜单，只有角色匹配时才返回
+    return item.role === userRole.value
+  })
 })
 
 // 🚀 处理下拉菜单的点击事件
@@ -157,6 +165,8 @@ const handleCommand = (command) => {
 // 动态路由名称
 const currentPathName = computed(() => {
   const map = {
+    // 🚀 新增：管理中枢系统的路由映射
+    '/admin-hub': '管理中枢系统 // Management Hub',
     '/dashboard': '能效态势看板 // Energy Dashboard',
     '/query': '数据中心与智能报表 // Data Center'
   }
